@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; frame-src 'self' blob: about:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Crash test aperto nel tuo browser</title>
+<link rel="stylesheet" href="../../web/comune/design_variabili.css">
+<style>
+  @font-face { font-family: "Space Grotesk"; font-weight: 500; src: url("../../web/fornitori/font/space-grotesk-latin-500-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Space Grotesk"; font-weight: 700; src: url("../../web/fornitori/font/space-grotesk-latin-700-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Inter"; font-weight: 400; src: url("../../web/fornitori/font/inter-latin-400-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Inter"; font-weight: 600; src: url("../../web/fornitori/font/inter-latin-600-normal.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Mono"; font-weight: 400; src: url("../../web/fornitori/font/ibm-plex-mono-latin-400-normal.woff2") format("woff2"); }
+  /* palette e caratteri dalla fonte unica del design (config/design.yaml, web/comune/design_variabili.css); su nero il grigio e il rosso
+     sono le varianti leggibili (contrasto AA) */
+  :root { --fondo2: var(--fondo-campo); --grigio: var(--grigio-leggibile); --rosso: var(--rosso-leggibile); --bordo: var(--bordo-campo); color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--nero); color: var(--bianco); font: 400 16px/1.55 var(--testo); }
+  main { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  h1, h2 { font-family: var(--titolo); font-weight: 700; line-height: 1.2; }
+  h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); margin: .3rem 0 .6rem; }
+  h2 { font-size: 1.2rem; margin: 2rem 0 .6rem; }
+  .occhiello { font-family: var(--titolo); font-weight: 500; color: var(--ciano); letter-spacing: .08em;
+               text-transform: uppercase; font-size: .85rem; margin: 0; }
+  .privacy { border: 1px solid var(--ciano); border-radius: 8px; padding: .8rem 1rem; margin: 1rem 0; }
+  .privacy strong { color: var(--ciano); font-family: var(--titolo); font-size: 1.15rem; }
+  .tenue { color: var(--grigio); }
+  a { color: var(--ciano); }
+  .mono, code { font-family: var(--mono); font-size: .9em; }
+  button, .bottone { font: 600 1rem/1 var(--testo); color: var(--nero); background: var(--ciano); border: 2px solid var(--ciano);
+           border-radius: 6px; padding: .75rem 1.1rem; cursor: pointer; text-decoration: none; display: inline-block; }
+  button.secondario { background: transparent; color: var(--ciano); }
+  button:disabled { background: transparent; color: var(--grigio); border-color: var(--bordo); cursor: not-allowed; }
+  :focus-visible { outline: 3px solid var(--ambra); outline-offset: 3px; }
+  .passo { border-left: 3px solid var(--bordo); padding: .2rem 0 .2rem 1rem; margin: 1rem 0; }
+  .passo.attivo { border-left-color: var(--ciano); }
+  #zona { display: block; border: 2px dashed var(--bordo); border-radius: 8px; padding: 1.3rem; margin: .8rem 0; text-align: center; }
+  #zona.sopra { border-color: var(--ciano); background: var(--fondo2); }
+  #zona input { display: block; margin: .6rem auto 0; color: var(--bianco); max-width: 100%; }
+  progress { width: 100%; height: .6rem; accent-color: var(--ciano); }
+  .azioni { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; margin: .8rem 0; }
+  #messaggio { margin: 1rem 0; }
+  .errore { border: 1px solid var(--rosso); color: var(--rosso); border-radius: 8px; padding: .8rem 1rem; white-space: pre-wrap; }
+  .rifiuto { border: 1px solid var(--ambra); color: var(--ambra); border-radius: 8px; padding: .8rem 1rem; }
+  .rifiuto a, .privacy a { color: var(--ciano); }
+  .sint\65tico { display: inline-block; font-family: var(--titolo); font-weight: 700; letter-spacing: .08em;
+               color: var(--nero); background: var(--ambra); padding: 0 .4rem; border-radius: 3px; }
+  iframe { width: 100%; height: 80vh; border: 0; border-radius: 6px; background: var(--stampa-fondo); margin-top: .6rem; }
+  .nota { font-size: .9rem; }
+</style>
+<link rel="stylesheet" href="../../../css/un_carattere.css">
+</head>
+<body>
+<main>
+<p class="occhiello">Crash test aperto · Un campione basta?</p>
+<h1>Il tuo Rapporto di rappresentatività, nel browser</h1>
+<p>Hai misurato la risposta ai farmaci su più lesioni dello stesso paziente? Trascina qui il tuo CSV: la pagina calcola
+quanto spesso un secondo campione cambia il farmaco più attivo in laboratorio, quello in cima alla lista, con le stesse regole e lo stesso codice
+dell'analisi preregistrata. Nessuna installazione. Nessun uso clinico, nessun consiglio terapeutico.</p>
+<div class="privacy" role="note">
+  <strong>Il tuo file non lascia questo computer.</strong>
+  <p>Il calcolo gira in questa pagina, con Python nel browser. Dopo il caricamento iniziale (circa
+  <span id="mb">36</span> MB, solo da questo sito, solo quando premi «Avvia») la pagina non fa più nessuna richiesta di
+  rete: il file che scegli viene letto qui e il Rapporto si scarica dal tuo browser.</p>
+</div>
+
+<section class="passo attivo" id="passo1" aria-labelledby="t1">
+  <h2 id="t1">1. Avvia</h2>
+  <p class="tenue nota">Scarica e verifica Python per il browser (Pyodide 314.0.8) e il codice del progetto: ogni file
+  viene usato solo se la sua impronta SHA256 coincide con quella pubblicata.</p>
+  <div class="azioni"><button id="avvia" type="button">Avvia</button></div>
+  <progress id="barra" max="1" value="0" aria-label="Caricamento"></progress>
+  <p id="fase" class="tenue nota" role="status" aria-live="polite">Non avviato: nessun file è stato scaricato.</p>
+</section>
+
+<section class="passo" id="passo2" aria-labelledby="t2">
+  <h2 id="t2">2. Il tuo file</h2>
+  <p class="nota">Un CSV nel formato aperto: colonne <code>paziente</code>, <code>lesione</code>, <code>campione</code>,
+  <code>farmaco</code>, <code>punteggio</code>, <code>verso</code> e, se le hai, <code>intervento</code> e <code>libreria</code>.
+  Il formato è descritto nella guida del sito, «<a class="link" href="../../../#provalo">Provalo sui tuoi dati</a>».</p>
+  <label id="zona" for="file">Trascina qui il CSV, oppure sceglilo:
+    <input id="file" type="file" accept=".csv,text/csv" disabled>
+  </label>
+<!--SIM-->
+  <div class="azioni">
+    <button id="esempio" type="button" class="secondario" disabled>Prova con i dati di esempio</button>
+    <span class="tenue nota">dati inventati, marcati <span class="sintetico">SINTETICO</span></span>
+  </div>
+<!--/SIM-->
+</section>
+
+<section class="passo" id="passo3" aria-labelledby="t3">
+  <h2 id="t3">3. Il Rapporto</h2>
+  <div id="messaggio" role="status" aria-live="polite" class="tenue">Ancora nessun Rapporto.</div>
+  <div class="azioni" id="scarica-blocco" hidden>
+    <a id="scarica" class="bottone" href="#" download>Scarica il Rapporto (HTML e CSV con i .meta.json, zip)</a>
+  </div>
+  <iframe id="rapporto" title="Rapporto di rappresentatività" sandbox="" hidden></iframe>
+</section>
+<section class="passo" id="domande-pronte" aria-labelledby="t-domande"><h2 id="t-domande">Tre domande pronte a VERA</h2><p class="tenue">Risposte già verificate, con la loro fonte. Il tuo file resta qui: a VERA non arriva nessun numero.</p><details class="pannello-documento domanda-pronta" data-domanda="giuria_52"><summary>Come si legge il Rapporto del crash test?</summary><p>In alto c&#x27;è il risultato in una frase: in quanti pazienti il secondo campione cambia il farmaco più attivo in laboratorio, quello in cima alla lista, con il suo intervallo al 95%. Sotto c&#x27;è la stessa cosa per «esce dai primi tre». Poi vengono le figure, le sezioni brevi su dati, regole e limiti, e le tabelle complete. Ogni numero viene dai file prodotti dal comando, ognuno con la sua scheda.</p><p class="tenue nota">docs/DOMANDE_GIURIA.md · riga 185 · impronta fa9d672394c142a1…</p><p class="tenue nota">Documenti del progetto · frase verificata</p></details><details class="pannello-documento domanda-pronta" data-domanda="giuria_53"><summary>I miei dati restano sul mio computer?</summary><p>Sì. Nella versione nel browser il calcolo gira sul tuo computer: dopo il caricamento iniziale, che parte solo quando premi «Avvia», la pagina non fa più nessuna richiesta di rete, e un test lo verifica. Il codice è lo stesso del comando: con il file di esempio, Rapporto e tabelle sono identici byte per byte.</p><p class="tenue nota">docs/DOMANDE_GIURIA.md · riga 188 · impronta fa9d672394c142a1…</p><p class="tenue nota">Documenti del progetto · frase verificata</p></details><details class="pannello-documento domanda-pronta" data-domanda="giuria_54"><summary>Che cosa non dice il Rapporto?</summary><p>Non è uno strumento clinico: descrive i tuoi dati di laboratorio. Se mancano le repliche il rumore è NOT VERIFIED: una parte dei cambi di priorità può essere rumore di misura. La curva delle politiche è solo esplorativa: non è una regola da usare in laboratorio. E le coppie dello stesso paziente non sono indipendenti.</p><p class="tenue nota">docs/DOMANDE_GIURIA.md · riga 191 · impronta fa9d672394c142a1…</p><p class="tenue nota">Documenti del progetto · frase verificata</p></details></section>
+</main>
+<script src="app.js" integrity="sha384-NmY+HDjPymiT2ok70qriNSrhUCmS9n77jzt2tzstjK+ork0l/nQQdc39CJoXKQle"></script>
+</body>
+</html>

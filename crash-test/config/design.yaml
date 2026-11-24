@@ -1,0 +1,139 @@
+# FONTE UNICA DEL DESIGN del Neural Core (decisioni di chi cura il design). Si cambia qui, poi:
+#     python -m strumenti.genera_design            # riscrive web/comune/design.css, web/motore/design.js, web/guida/index.html
+#     python -m strumenti.genera_design --controlla # (nei test) i file generati sono allineati a questo file
+# Sfera (web/motore), palco, console e telecomando leggono SOLO i file generati: nessun colore esadecimale ne' nome di font scritto a mano.
+# Valori di oggi (20/11/2026): nessun cambiamento visivo rispetto a prima della fonte unica.
+versione: 1
+
+# --- colori della palette (D1) ---------------------------------------------------------------------------------------
+colori:
+  nero: {valore: "#000000", uso: "sfondo assoluto (B12)"}
+  ciano: {valore: "#35D6E8", uso: "verificato, collegamenti, azione principale"}
+  ambra: {valore: "#F2B84B", uso: "SINTETICO, ipotesi, avvisi"}
+  grigio: {valore: "#858D99", uso: "non verificato, testi secondari"}
+  rosso: {valore: "#E35D66", uso: "rifiuto, errore, pericolo"}
+  bianco: {valore: "#F4F7FA", uso: "testo"}
+
+# toni neutri di servizio (linee, fondi dei pulsanti, testi spenti): derivati dalla palette, usati in pochi punti
+toni:
+  linea: "#1B1F24"            # separatori tra le righe dei pannelli del palco
+  bordo_spento: "#2A2F36"     # bordo delle voci spente della bussola
+  testo_spento: "#4D545E"     # voci spente della bussola
+  testo_vuoto: "#5B626C"      # anelli vuoti del passaporto
+  parola_in_attesa: "#8A929D" # parole del sottotitolo non ancora dette
+  indicatore: "#B9C0C9"       # parola dell'indicatore compatto accanto al sottotitolo
+  fondo_console: "#111111"    # fondo della console di regia
+  fondo_pulsante: "#1C1C1C"   # pulsanti della console
+  fondo_telecomando: "#0B0D10" # pulsanti del telecomando
+  fondo_primario: "#07191C"   # pulsante principale del telecomando (ciano molto scuro)
+  linea_testo: "#222222"      # separatori della versione testuale
+  bordo_testo: "#333333"      # riquadri della versione testuale
+  qr_fondo: "#FFFFFF"         # fondo del QR: bianco puro (serve alla lettura del codice)
+  qr_modulo: "#000000"        # moduli del QR: nero puro
+  # sito pubblico (pagina iniziale, Verifica, Neural Core statico), widget dell'assistente e pagina del crash test: i valori di oggi
+  testo_chiaro: "#C9D1DA"     # testi secondari su nero nella pagina iniziale
+  testo_secondario: "#A9B2BC" # didascalie delle scene, origine delle date della cronologia
+  ciano_chiaro: "#7CE6F1"     # pulsante principale al passaggio del puntatore
+  fondo_codice: "#0B0E11"     # blocchi dei comandi, campo di scelta del Neural Core
+  fondo_barra: "#080A0C"      # barra delle avvertenze (vetro scuro)
+  bordo_pannello: "#262B32"   # bordi dei pannelli del Neural Core
+  bordo_medio: "#3B424B"      # barra delle scene e bussola del Neural Core
+  linea_tabella: "#14181D"    # righe delle tabelle della versione testuale
+  fondo_campo: "#0D1117"      # campi e riquadri del widget e della pagina del crash test
+  bordo_campo: "#3A424D"      # bordi del widget e della pagina del crash test
+  grigio_leggibile: "#9AA2AD" # testi secondari del widget e del crash test (contrasto AA su nero)
+  rosso_leggibile: "#FF8A92"  # errori del widget e del crash test (contrasto AA su nero)
+
+# --- stampa: il Rapporto del crash test (pagina bianca, da stampare e scaricare) ------------------------------------------
+# i colori del progetto adattati al fondo bianco: ogni coppia testo/fondo del Rapporto supera 4,5:1 (lo controlla il Rapporto stesso)
+stampa:
+  testo: "#14181D"
+  secondario: "#4A525C"
+  fondo: "#FFFFFF"
+  linea: "#C9CED4"
+  griglia: "#E6E9ED"
+  accento: "#00707C"         # il ciano del progetto scurito per il contrasto su bianco
+  accento_chiaro: "#E3F4F6"
+  ambra: "#8A5300"           # ESPLORATIVA
+  ambra_fondo: "#FCEFD3"
+  grigio: "#5B6370"          # non verificato, non calcolabile
+  grigio_fondo: "#ECEEF1"
+  banda: "#D7DCE2"           # banda del caso nel grafico (riempimento, non testo)
+
+# --- caratteri ------------------------------------------------------------------------------------------------------
+font:
+  titolo: {famiglia: "Space Grotesk", ripiego: ['"Inter"', "sans-serif"], file: space-grotesk, pesi: [400, 500, 700]}
+  testo: {famiglia: "Inter", ripiego: ["system-ui", "sans-serif"], file: inter, pesi: [400, 500, 600]}
+  mono: {famiglia: "IBM Plex Mono", ripiego: ["ui-monospace", "monospace"], file: ibm-plex-mono, pesi: [400, 500]}
+# quando si usa il mono: solo impronte, codici, commit, nomi di file; testi in Inter; titoli in Space Grotesk
+
+# --- scala dei testi (palco e sfera) ---------------------------------------------------------------------------------
+# il palco misura tutto in «u» (legge bene anche dall'ultima fila, D9); i valori sono multipli di u
+unita: "min(1vw, 1.8vh)"
+testi:
+  numero: 11          # la cifra grande della scena del numero (S13)
+  scheda_titolo: 1.8  # titolo della scheda di un nodo
+  sottotitolo: 1.45   # la frase detta
+  sottotitolo_lungo: 1.22
+  pannello_titolo: 1.15
+  chip: 1.05
+  chi: 0.95           # chi parla, sopra la frase
+  etichetta: 0.85     # chip delle etichette
+# testi disegnati dalla sfera (pixel della tela, prima della scala)
+testi_sfera:
+  etichetta_nodo_px: 17     # altezza dell'etichetta di un nodo sullo schermo
+  scritta_forma_px: 38      # scritte delle forme (assi, didascalie)
+  scritta_codice_px: 36     # scritte di codici e file nelle forme
+  nome_zona_px: 24          # nomi delle zone (DATI, METODO, EVIDENZE, VERIFICATORE)
+  scritta_alone_px: 30      # scritta dell'alone del farmaco migliore
+
+# --- spaziature e raggi ----------------------------------------------------------------------------------------------
+spazi: {xs: ".3em", s: ".6em", m: "1em", l: "1.5em"}
+raggi:
+  chip: "2em"          # chip ed etichette: a pillola
+  carta: ".4rem"       # carte e riquadri
+  pulsante: ".4rem"    # pulsanti della console
+  pulsante_telefono: "16px"  # pulsanti del telecomando
+  qr: ".4em"
+
+# --- movimenti -------------------------------------------------------------------------------------------------------
+movimenti:
+  trasformazione_s: 3.2      # lo sciame passa da una figura all'altra (curva: smoothstep, con un ritardo proprio per particella)
+  camera_omega: 1.5          # molla critica della camera (piu' alto = piu' rapida); nessun rimbalzo, nessuno scatto
+  nodi_rapidita: 2.2         # i nodi raggiungono la loro posizione (inerzia, 2-3 secondi)
+  bagliore_trasformazione_s: 2.4   # il bagliore cresce e torna durante una trasformazione
+  nome_zona_s: 4.5           # quanto resta il nome di una zona dopo un impulso
+  comparsa_decorazione: 4    # rapidita' con cui compare una scritta o una linea di una forma
+  css_entra: ".6s"           # righe dell'autodiagnosi
+  css_parola: ".12s"         # parola detta nel sottotitolo
+  css_fonte: ".4s"           # fonte accesa nel pannello delle fonti
+  curva_css: "ease"
+
+# --- bagliore (BloomNode) --------------------------------------------------------------------------------------------
+bagliore:
+  completa: 0.34
+  media: 0.26
+  leggera: 0.16
+  raggio: 0.7
+  soglia: 0.18
+  trasformazione_extra: 0.9    # quanto cresce durante una trasformazione (frazione della forza)
+
+# --- stati della sfera: colore e forma (B3, B4, P2) -------------------------------------------------------------------
+# si leggono anche senza colore: ogni stato ha una forma propria
+stati:
+  SOURCE: {colore: ciano, forma: anello_sottile, nome: "fonte", spiega: "fonte letta: anello sottile"}
+  DATA: {colore: ciano, forma: pieno, nome: "dato", spiega: "file aperto e verificato: pieno"}
+  CALCULATION: {colore: ciano, forma: pieno_con_anello, nome: "calcolato", spiega: "codice eseguito e tracciato: pieno con anello esterno"}
+  INFERENCE: {colore: ambra, forma: mezzo_pieno, nome: "ipotesi", spiega: "ipotesi: mezzo pieno"}
+  "NOT VERIFIED": {colore: grigio, forma: tratteggiato, nome: "non verificato", spiega: "prova mancante: contorno tratteggiato, nessun valore"}
+modalita:
+  PRECOMPUTED: "precalcolato"
+  LIVE: "dal vivo"
+  SIMULATION: "simulazione"
+# stato delle quattro zone attorno alla sfera (Dati, Metodo, Evidenze, Verificatore)
+zone:
+  ok: ciano
+  avviso: ambra
+  assente: grigio
+  fallito: rosso
+  spento: grigio

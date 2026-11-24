@@ -1,0 +1,48 @@
+{
+  "componenti": {
+    "font": {
+      "cartella": "font",
+      "licenza": "SIL OFL 1.1",
+      "nome": "Space Grotesk, Inter, IBM Plex Mono; Geist Mono (design versione 32)",
+      "origine": "npm: @fontsource/space-grotesk, @fontsource/inter, @fontsource/ibm-plex-mono, @fontsource-variable/geist-mono@5.3.0",
+      "versione": "fontsource latin (npm); fontsource-variable 5.3.0 latin (npm)"
+    },
+    "qrcode": {
+      "cartella": "qrcode",
+      "licenza": "MIT",
+      "nome": "qrcode-generator (Kazuhiko Arase)",
+      "origine": "npm: qrcode-generator@1.4.4",
+      "versione": "1.4.4"
+    },
+    "three": {
+      "cartella": "three",
+      "licenza": "MIT",
+      "nome": "three.js",
+      "origine": "npm: three@0.187.0 (build ES: three.webgpu.js, three.core.js, three.tsl.js; addon TSL: BloomNode)",
+      "versione": "0.187.0"
+    }
+  },
+  "file": {
+    "font/LICENSE-geist-mono.txt": "cc815ed4fc045f0e991abb10395b7932bd028c6a067deb13316d6002105074e6",
+    "font/LICENSE-ibm-plex-mono.txt": "23b0a9d0c6d3f140a0b77e483c5cfa6bba574325ef5cb189ed9f2fec4884533f",
+    "font/LICENSE-inter.txt": "3b0a5fca3d17942cde889069889dedbbbd075e9b599968c82a95f4d944e9b345",
+    "font/LICENSE-space-grotesk.txt": "18a4de52385f6b988782639d5d0cc1326e5a8c2de9a7f01d7b20d9aedcc60943",
+    "font/geist-mono-latin-wght-normal.woff2": "684ad5b531f81d43c1e8c7038262d5db7cdc1f68006e04d6c7769efa8d33c8cc",
+    "font/ibm-plex-mono-latin-400-normal.woff2": "08949f728dc52d528e69b1667d15c89a5686a4ee9a296ff90983985f99c380f7",
+    "font/ibm-plex-mono-latin-500-normal.woff2": "01d285447409c8a588692162439a038b8cbd7871309ee20267b0d2d91c6e8e22",
+    "font/inter-latin-400-normal.woff2": "8909904ab6c872eb994093482a88a28eca2cd95912d7b6fecd72103b0dc07edc",
+    "font/inter-latin-500-normal.woff2": "f3779f1efccc4bdcdf9c0a02ab95bf6bd092ed09c48c08cedc725889edd1d19f",
+    "font/inter-latin-600-normal.woff2": "f9a06e79cd3a2a20951c0f0e28f66dd0e6d3fda73911d640a2125c8fcb78f21a",
+    "font/space-grotesk-latin-400-normal.woff2": "65fd17fcbd2e2f522940b5f67ead3d23329e02891aa5495e74d11a499c0b0673",
+    "font/space-grotesk-latin-500-normal.woff2": "1b1a8131d9edf975d9decee81e2f2bf504812f7a4f498e5500f28a613e22e64c",
+    "font/space-grotesk-latin-700-normal.woff2": "35f8aec56cfd5cbfdb03cc68733a54a0b05bb3617ffcd5fd332badc0b045ca55",
+    "qrcode/LICENSE": "c3e8108e17e1a1c23c6218730ff9fe715b1de350971f5891ad6f894ff7427ae6",
+    "qrcode/qrcode.js": "18ae399f81182bc9de916e9c77b195df20cc58d6f2d55a62b085a299f1bf1780",
+    "three/LICENSE": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+    "three/build/three.core.js": "613e370f76638fdef83926642bf256dc9615684922de1ce1f63a8583e5d78578",
+    "three/build/three.tsl.js": "d8f3cdb8b85b799a5631bd9a8d77e185d88ce1eb1bb051f48b332728a5423e3f",
+    "three/build/three.webgpu.js": "eafead3154ec06093f3108bddceab360f048a6fcebd7c085d5aae0ab5404bd25",
+    "three/jsm/tsl/display/BloomNode.js": "e7a39bf41581b5ada6463dfd2e571c6fff27648e459cc0d7fd13d64bbcf0f6ea"
+  },
+  "schema": "fornitori/1"
+}

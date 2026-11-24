@@ -1,0 +1,14 @@
+{
+  "strumento": "crash test nel browser: impronte dei file di Kryeziu et al. 2026 (nessun dato)",
+  "comando": "python -m strumenti.crash_test_browser.prepara",
+  "fonti": {
+    "docs/PREREGISTRATION.md": "cf33e95b9b1dd73e23acbf7f86e75734a8d28815c6bcd0410a7db8d996b228e2",
+    "evidence/replica_sessione/LEGGIMI.md": "3523e6fd9de91416cfce8aac9b7bac5143b21111d67ce566448c3f5a6d252d29"
+  },
+  "impronte": [
+    "05be116a1cc837a70b97ed24af1d7a01efdb57faa5e9d9b711882ebaec5ebae2",
+    "105c3edf7ff5cb69d8a6ef006026e5cf8dc43bc7cc78dd18a9bb738a7d26117e",
+    "3847aa93b2a84c7d5d0b04c26494f39f35963fc41e96eae97d8a180fbc33d81c",
+    "d125c5b3a1144aab2b5406cf8f26fa3c5998426ff452b4a742e651f0b253fcc7"
+  ]
+}
