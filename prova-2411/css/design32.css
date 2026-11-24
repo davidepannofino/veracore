@@ -120,6 +120,7 @@ body{margin:0;background:#F2F1EC}
 .passo:nth-child(3n){margin-left:min(240px,16vw)}
 .passo-titolo{font:500 14px/1.4 var(--font-main);text-transform:uppercase;letter-spacing:.02em;color:var(--brina)}
 .passo-titolo .n{color:var(--nebbia)}
+.passo-testo{margin-top:12px;font-size:14px;line-height:1.65;color:var(--nebbia)}
 .passo.spento{opacity:.34}
 .core-fisso{position:sticky;top:0;height:var(--vh)}
 .core-fisso canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -547,7 +548,7 @@ body{margin:0;background:#F2F1EC}
   --space-1:.25rem;--space-2:.5rem;--space-3:1rem;--space-4:1.5rem;--space-5:2rem;--space-6:3rem;
   --dur-ui:160ms;--dur-word:500ms;--dur-question:600ms;--dur-rule:600ms;--dur-card:800ms;--dur-foot:800ms;--dur-reduced:300ms;
   --ease-out:cubic-bezier(.22,1,.36,1);--ease-inout:cubic-bezier(.65,0,.35,1);
-  --carta-2:#E7E6E0;--carta-3:#DBDAD3;--etichetta:#5F6166;--linea:#D3D2CB;--tratteggio:rgba(20,21,23,.32);--stanza:#0E1012;--stanza-2:#16191C;--stanza-3:#23272B;--brina:#ECEDE8;--nebbia:#8E9297;--filo:rgba(236,237,232,.14);--vh:900px;--ease-standard:cubic-bezier(.4,0,.2,1);--ease-roll:cubic-bezier(.16,.84,.24,1);
+  --carta-2:#E7E6E0;--carta-3:#DBDAD3;--etichetta:#5F6166;--linea:#D3D2CB;--tratteggio:rgba(20,21,23,.32);--stanza:#0E1012;--stanza-2:#16191C;--stanza-3:#23272B;--brina:#ECEDE8;--nebbia:#8E9297;--filo:rgba(236,237,232,.14);--vh:900px;--vh:clamp(560px,100svh,1200px);--ease-standard:cubic-bezier(.4,0,.2,1);--ease-roll:cubic-bezier(.16,.84,.24,1);
   --font-main:"Geist Mono",ui-monospace,monospace;
   --fs-1:clamp(1.625rem,3vw,2.75rem);--fs-2:clamp(1.125rem,1.8vw,1.5rem);--fs-3:.6875rem;
 }
@@ -789,3 +790,30 @@ body.v32 #barra-fissa { -webkit-backdrop-filter: none; backdrop-filter: none; ba
   text-decoration: underline 2px transparent; text-underline-offset: 4px; text-decoration-skip-ink: none; }
 .pagina .problema .frase-passo.accesa { color: var(--ink); text-decoration-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .pagina .problema .frase-passo { transition: none; } }
+/* B10 (25/11): il tasto del suono dell'ambiente nella barra, come nel prototipo 32 (barre, pannello del volume, «Riprendi») */
+.nav-suono-guscio{position:relative;display:flex}
+.nav-suono.riprendi .eti::after{content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--accent);vertical-align:2px}
+.barre{display:inline-flex;align-items:flex-end;gap:2px;height:11px}
+.barre i{display:block;width:2px;height:3px;border-radius:1px;background:currentColor;transform-origin:bottom}
+.suono-on .barre i{height:11px;animation:barra 1.1s var(--ease-standard) infinite alternate}
+.suono-on .barre i:nth-child(2){animation-duration:.8s;animation-delay:-.3s}
+.suono-on .barre i:nth-child(3){animation-duration:1.3s;animation-delay:-.6s}
+.suono-on .barre i:nth-child(4){animation-duration:.95s;animation-delay:-.2s}
+.suono-pannello{position:absolute;right:0;top:calc(100% + 12px);width:248px;padding:12px 12px 10px;border-radius:8px;background:var(--stanza);border:1px solid rgba(236,237,232,.14);box-shadow:0 16px 36px -16px rgba(0,0,0,.6);color:var(--brina);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .2s var(--ease-standard),transform .2s var(--ease-standard),visibility 0s linear .2s;z-index:2}
+.suono-on .nav-suono-guscio:hover .suono-pannello,.suono-on .nav-suono-guscio:focus-within .suono-pannello,.nav-suono-guscio.mostra .suono-pannello{opacity:1;visibility:visible;transform:none;transition-delay:0s}
+.suono-pannello::before{content:"";position:absolute;left:0;right:0;top:-14px;height:14px}
+.suono-vol{display:flex;align-items:center;gap:10px;font:400 10.5px/1 var(--font-main);text-transform:uppercase;letter-spacing:.05em;color:var(--nebbia)}
+.suono-vol input{flex:1;min-width:0;height:24px;accent-color:var(--accent);cursor:pointer}
+.suono-nota{display:block;margin-top:9px;font:400 10px/1.5 var(--font-main);letter-spacing:.02em;color:var(--nebbia)}
+@media (max-width:899px){.suono-pannello{right:-6px}}
+/* B11 (25/11): il primo fotogramma fermo della sfera nel pannello scuro, finche' il canvas non disegna. Stessa grandezza e stesso
+   posto del primo disegno (design32.js: R0 = 0,2 x min(meta' larghezza, altezza) al centro (75%, 53%); sotto i 900 px
+   R0 = 0,19 x il lato corto al centro (50%, 80%)); sfuma quando la sfera vera c'e'. Fermo anche con il movimento ridotto. */
+.sfera-ferma{position:absolute;inset:0;pointer-events:none;--r:calc(min(50vw,100svh) * .2);--cx:75%;--cy:53%;transition:opacity .45s var(--ease-standard)}
+.sfera-ferma span{position:absolute;left:var(--cx);top:var(--cy);border-radius:50%;transform:translate(-50%,-50%)}
+.sf-anello{width:calc(var(--r) * 2);height:calc(var(--r) * 2);border:1px solid rgba(236,237,232,.14)}
+.sf-punti{width:calc(var(--r) * 2);height:calc(var(--r) * 2);background:radial-gradient(circle,rgba(236,237,232,.38) 0 1px,transparent 1.6px) 0 0/calc(var(--r) * .22) calc(var(--r) * .22);
+  -webkit-mask:radial-gradient(circle,#000 0 58%,rgba(0,0,0,.35) 70%,transparent 71%);mask:radial-gradient(circle,#000 0 58%,rgba(0,0,0,.35) 70%,transparent 71%)}
+.sf-centro{width:8px;height:8px;background:var(--accent);box-shadow:0 0 14px 2px color-mix(in srgb,var(--accent) 45%,transparent)}
+.sfera-disegnata .sfera-ferma{opacity:0}
+@media (max-width:899px){.sfera-ferma{--r:calc(min(100vw,100svh) * .19);--cx:50%;--cy:80%}}
