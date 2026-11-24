@@ -1,0 +1,110 @@
+# Schema delle colonne dei dati di input.
+
+# Tabella lunga usata da src/descriptive.py (una riga per campione e farmaco).
+# La scrive src/prepara_s5.py a partire da Data S5: questi nomi sono quelli del NOSTRO file
+# preparato, non colonne del file degli autori.
+columns:
+  patient: paziente      # codice paziente dalla convenzione dei nomi (es. Pt6)
+  sample_id: sample_id   # identificativo del campione (organoide); letto come testo esatto
+  lesion: lesione        # intervento + "_" + t<n> (es. Pt6.2_t4); vuota se la lesione NON e' verificata
+  drug: farmaco          # nome della colonna di Data S5, mai modificato
+  dss: dss               # risposta (DSS), mai trasformata
+
+# Data S5 (matrice DSS in formato largo, una riga per campione).
+# Struttura registrata dalle sole INTESTAZIONI, lette dal revisore metodologico sul file vero: nessun valore di risposta.
+# Ordine delle 62 colonne: sample_id, run_id_harmonize, 24 farmaci primari, run_id_lib1,
+# 11 colonne con suffisso _lib1, run_id_lib2, 23 colonne con suffisso _lib2.
+# src/prepara_s5.py confronta le intestazioni del file con questo schema, nome per nome e in ordine,
+# e si ferma se non coincidono.
+s5:
+  foglio: "Sheet1"
+  sample_id: "sample_id"
+  run_id:
+    harmonize: "run_id_harmonize"
+    lib1: "run_id_lib1"
+    lib2: "run_id_lib2"
+  # D15 (preregistrazione v0.3.4): pannello PRIMARIO, le 24 colonne tra run_id_harmonize e run_id_lib1,
+  # in quest'ordine esatto.
+  farmaci_primari:
+    - "5-FU"
+    - "Afatinib"
+    - "Alisertib"
+    - "Atorvastatin"
+    - "AZD7762"
+    - "Bemcentinib"
+    - "Encorafenib"
+    - "Gedatolisib"
+    - "Gemcitabine"
+    - "Idasanutlin"
+    - "Lapatinib"
+    - "LCL161"
+    - "LGK974"
+    - "Luminespib"
+    - "Methotrexate"
+    - "Napabucasin"
+    - "Palbociclib"
+    - "Panobinostat"
+    - "Pevonedistat"
+    - "Regorafenib"
+    - "SN-38"
+    - "TAS-102"
+    - "Trametinib"
+    - "Volasertib"
+  # Blocchi delle due librerie: elenco ESATTO delle colonne, nell'ordine del file. Ogni nome finisce con il
+  # suffisso della libreria; n_colonne deve coincidere con la lunghezza dell'elenco (doppio controllo).
+  lib1:
+    suffisso: "_lib1"
+    n_colonne: 11
+    colonne:
+      - "5-FU&Gemcitabine_lib1"
+      - "Binimetinib_lib1"
+      - "Eltanexor_lib1"
+      - "Erlotinib_lib1"
+      - "Ipatasertib_lib1"
+      - "Linsitinib_lib1"
+      - "Navitoclax_lib1"
+      - "Olaparib_lib1"
+      - "Oxaliplatin_lib1"
+      - "Sirolimus_lib1"
+      - "Tretinoin_lib1"
+  lib2:
+    suffisso: "_lib2"
+    n_colonne: 23
+    colonne:
+      - "Adavosertib_lib2"
+      - "Alectinib_lib2"
+      - "AZD5991_lib2"
+      - "BMS.754807_lib2"
+      - "Carfilzomib_lib2"
+      - "Ceralasertib_lib2"
+      - "Cetuximab_lib2"
+      - "Dasatinib_lib2"
+      - "Everolimus_lib2"
+      - "FLIRI_lib2"
+      - "FLOX_lib2"
+      - "FLV_lib2"
+      - "Idelalisib_lib2"
+      - "Larotrectinib_lib2"
+      - "MAPK.3x_lib2"
+      - "Oxaliplatin_lib2"
+      - "Savolitinib_lib2"
+      - "Selinexor_lib2"
+      - "Silmitasertib_lib2"
+      - "Sotorasib_lib2"
+      - "Talazoparib_lib2"
+      - "Venetoclax_lib2"
+      - "Volasertib.SN38_lib2"
+  # D12 e D15: combinazioni di farmaci, solo analisi secondaria. Devono comparire nell'elenco della loro libreria.
+  combinazioni:
+    - "5-FU&Gemcitabine_lib1"
+    - "FLIRI_lib2"
+    - "FLOX_lib2"
+    - "FLV_lib2"
+    - "MAPK.3x_lib2"
+    - "Volasertib.SN38_lib2"
+
+# Data S1 (mutazioni, una riga per variante): si leggono SOLO queste due colonne, per controllare il paziente (D13).
+s1:
+  foglio: "Sheet1"
+  sample_id: "sample_id"
+  patient: "patient"

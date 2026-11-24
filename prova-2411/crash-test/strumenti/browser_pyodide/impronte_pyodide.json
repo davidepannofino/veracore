@@ -1,0 +1,68 @@
+{
+  "sperimentale": true,
+  "pyodide": "314.0.8",
+  "origine": "https://cdn.jsdelivr.net/pyodide/v314.0.8/full/ (scaricati una volta e verificati con pyodide-lock.json)",
+  "byte_totali": 35838930,
+  "file": {
+    "avvio.py": {
+      "sha256": "1d3572de51ea0b2501cb76cb3c50221fc28cab14509dd7801baeb0c7dad3e535",
+      "byte": 6058
+    },
+    "pyodide/numpy-2.4.6-cp314-cp314-pyemscripten_2026_0_wasm32.whl": {
+      "sha256": "a292c1f5d7d8a2208cd5e94fc467604c131cabcd2fc14fed6eefde121e7fabdf",
+      "byte": 2960568
+    },
+    "pyodide/pandas-3.0.2-cp314-cp314-pyemscripten_2026_0_wasm32.whl": {
+      "sha256": "45ff57772cc2f366a8582c7d3097cc4e6676342ecd5a3c08184a43462d5a02ae",
+      "byte": 4177749
+    },
+    "pyodide/pyodide-lock.json": {
+      "sha256": "5dc2fc119108bc148c7457dc86e7675b5c87e1cafd420b9c34c1eaef7b36c010",
+      "byte": 119077
+    },
+    "pyodide/pyodide.asm.mjs": {
+      "sha256": "22514b8be6980e28a02c8b1d6387ce8dfe666fc4edf8d547cff5dce29ff4d972",
+      "byte": 1250259
+    },
+    "pyodide/pyodide.asm.wasm": {
+      "sha256": "e14d49ceca9b4a0e274ea918f3a898de2d3880b6e5573a6cfe1a2267ecc70329",
+      "byte": 9597892
+    },
+    "pyodide/pyodide.js": {
+      "sha256": "d4e1e0f06c29162eadf0c3f323c746884242b257d1faa94760442a4ac929e9a1",
+      "byte": 18726
+    },
+    "pyodide/python_dateutil-2.9.0.post0-py2.py3-none-any.whl": {
+      "sha256": "9b13365edf9c188f570baf9c540bbb3029ada2a2dacb9694b3659941693ee9e5",
+      "byte": 229892
+    },
+    "pyodide/python_stdlib.zip": {
+      "sha256": "2bd3394a145bfbbe5bbc9d9d6ab9136abbb986c6fef6c142b3a2962227aa5c28",
+      "byte": 2545550
+    },
+    "pyodide/pytz-2026.1.post1-py2.py3-none-any.whl": {
+      "sha256": "b8249d6450146e0b61e6d710dc02ebb35a904796c4c2f97fe87d4ac5872db36a",
+      "byte": 510489
+    },
+    "pyodide/pyyaml-6.0.3-cp314-cp314-pyemscripten_2026_0_wasm32.whl": {
+      "sha256": "a05d2a48c13ed72a8c60c73b30b753a25c3a591bb66c15428b7e95e69a9e806f",
+      "byte": 112901
+    },
+    "pyodide/scipy-1.18.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl": {
+      "sha256": "17ee329a957863516d1bb6a6aaa0c60576fac027e9cd3d43de27f58b5b599b50",
+      "byte": 14029750
+    },
+    "pyodide/six-1.17.0-py2.py3-none-any.whl": {
+      "sha256": "228c50f73aa7addf2c2ccf2979c256802a59ab69cad8152b31b9443cc8140f42",
+      "byte": 11050
+    },
+    "ruote/et_xmlfile-2.0.0-py3-none-any.whl": {
+      "sha256": "7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa",
+      "byte": 18059
+    },
+    "ruote/openpyxl-3.1.5-py2.py3-none-any.whl": {
+      "sha256": "5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2",
+      "byte": 250910
+    }
+  }
+}

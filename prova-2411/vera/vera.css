@@ -1,0 +1,73 @@
+/* VERA viva: widget «Chiedi a …», nello stile del sito: palette e caratteri dalla fonte unica del design. */
+.vera {
+  /* i colori e i caratteri della fonte unica del design (config/design.yaml): web/comune/design.css nel sito, design_variabili.css altrove */
+  --vera-nero: var(--nero); --vera-fondo: var(--fondo-campo); --vera-bordo: var(--bordo-campo); --vera-ciano: var(--ciano); --vera-ambra: var(--ambra);
+  --vera-grigio: var(--grigio-leggibile); --vera-bianco: var(--bianco); --vera-rosso: var(--rosso-leggibile);
+  background: var(--vera-nero); color: var(--vera-bianco); font: 400 16px/1.55 var(--testo);
+  border: 1px solid var(--vera-bordo); border-radius: 10px; padding: 1.2rem; max-width: 48rem; box-sizing: border-box;
+}
+.vera *, .vera *::before, .vera *::after { box-sizing: border-box; }
+.vera-titolo { font: 700 1.5rem/1.2 var(--titolo); margin: 0 0 .4rem; }
+.vera-sotto { font: 500 .95rem/1.3 var(--titolo); color: var(--vera-ciano); margin: 1rem 0 .4rem; }
+.vera-nota, .vera-regole, .vera-contatore, .vera-conta { color: var(--vera-grigio); font-size: .9rem; margin: .3rem 0; }
+.vera-suggerite { display: flex; flex-wrap: wrap; gap: .5rem; }
+.vera button { font: 600 .95rem/1.3 var(--testo); border-radius: 6px; cursor: pointer; }
+.vera-suggerita, .vera-preparata { background: transparent; color: var(--vera-ciano); border: 1px solid var(--vera-ciano);
+  padding: .45rem .7rem; text-align: left; }
+.vera-chiedi { background: var(--vera-ciano); color: var(--vera-nero); border: 2px solid var(--vera-ciano); padding: .6rem 1.2rem; }
+.vera-chiedi:disabled { background: transparent; color: var(--vera-grigio); border-color: var(--vera-bordo); cursor: wait; }
+.vera :focus-visible { outline: 3px solid var(--vera-ambra); outline-offset: 2px; }
+.vera-modulo { margin-top: 1rem; }
+.vera-etichetta { display: block; font-weight: 600; margin-bottom: .3rem; }
+.vera-campo { width: 100%; background: var(--vera-fondo); color: var(--vera-bianco); border: 1px solid var(--vera-grigio);
+  border-radius: 6px; padding: .6rem; font: inherit; resize: vertical; }
+.vera-riga { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: .5rem; }
+.vera-risposta { margin-top: 1rem; border-top: 1px solid var(--vera-bordo); padding-top: .8rem; }
+.vera-testa { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.vera-q { font-weight: 600; margin: 0; flex: 1 1 100%; }
+.vera-badge { display: inline-block; font: 700 .78rem/1.6 var(--titolo); letter-spacing: .06em;
+  text-transform: uppercase; padding: 0 .5rem; border-radius: 4px; }
+.vera-ok { background: var(--vera-ciano); color: var(--vera-nero); }
+.vera-no { background: var(--vera-grigio); color: var(--vera-nero); }
+.vera-sintetico { background: var(--vera-ambra); color: var(--vera-nero); }
+.vera-frase { margin: .5rem 0; }
+.vera-rif { color: var(--vera-ciano); font: 400 .85rem var(--mono); margin-left: .15rem; }
+.vera-fonti { font-size: .88rem; color: var(--vera-grigio); padding-left: 1.4rem; margin: .2rem 0; }
+.vera-fonti li { margin: .3rem 0; overflow-wrap: anywhere; }
+.vera-fonti a, .vera-ripiego a { color: var(--vera-ciano); }
+.vera-id { font-family: var(--mono); color: var(--vera-bianco); }
+.vera-impronta { font-family: var(--mono); }
+.vera-rifiuto { color: var(--vera-bianco); border-left: 3px solid var(--vera-grigio); padding-left: .7rem; }
+.vera-attesa { color: var(--vera-grigio); }
+.vera-lista { list-style: none; padding: 0; margin: 0; display: grid; gap: .4rem; }
+.vera-ripiego { margin-top: .8rem; }
+.vera-chi { background: none; border: 0; padding: 0; color: var(--vera-ciano); text-decoration: underline; font-weight: 600; }
+.vera-avviso { margin: .8rem 0; border: 1px solid var(--vera-ambra); border-radius: 8px; padding: .6rem .8rem; }
+.vera-scheda { background: var(--vera-nero); color: var(--vera-bianco); border: 1px solid var(--vera-ciano); border-radius: 10px;
+  max-width: min(42rem, calc(100vw - 2rem)); padding: 1.2rem; font: 400 16px/1.55 var(--testo); }
+.vera-scheda::backdrop { background: rgba(var(--nero-rgb), .75); }
+.vera-pass-testa { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.vera-chiudi { background: transparent; color: var(--vera-ciano); border: 1px solid var(--vera-ciano); padding: .4rem .8rem; }
+.vera-pass-lista { padding-left: 1.2rem; margin: .3rem 0; }
+.vera-mono { font-family: var(--mono); }
+.vera-impronta-intera { overflow-wrap: anywhere; }
+.vera-scheda :focus-visible { outline: 3px solid var(--vera-ambra); outline-offset: 2px; }
+.vera-nota-stadio2 { color: var(--vera-grigio); font-size: .9rem; }
+.vera-presto { margin: .6rem 0; border-left: 3px solid var(--vera-ciano); padding: .2rem 0 .2rem .7rem; color: var(--vera-bianco); }
+
+/* memoria della pagina, progresso in diretta e Scettico (nodo ambra della sfera) */
+.vera .vera-memoria { font-size: .9rem; margin: .5rem 0; }
+.vera .vera-dimentica { margin-left: .4rem; }
+.vera .vera-progresso { font-size: .85rem; min-height: 1.2em; margin: .25rem 0; }
+.vera .vera-scettico { border-left: 4px solid var(--stampa-ambra); padding: .25rem .75rem; margin-top: .75rem; }
+/* PROPOSTE della sessione A (22/11), dietro interruttore in web/sito/sito.yaml */
+.vera-registro { margin-top: .75rem; color: var(--vera-grigio); font-size: .9rem; }
+.vera-registro summary { cursor: pointer; color: var(--vera-bianco); }
+.vera-registro-righe { margin: .5rem 0 0; padding-left: 0; list-style: none; }
+.vera-registro-righe li { margin: .15rem 0; overflow-wrap: anywhere; }
+.vera-trappole { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+
+/* B8 (sessione 06): la riga corta del tipo di fonte sotto la risposta; file, righe e impronte nei «dettagli», chiusi in partenza */
+.vera .vera-tipi-fonte { margin: .6rem 0 0; font-size: .82rem; color: var(--vera-grigio); }
+.vera .vera-dettagli-fonti { margin-top: .5rem; }
+.vera .vera-dettagli-fonti > summary { cursor: pointer; font-size: .82rem; }

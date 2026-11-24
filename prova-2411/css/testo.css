@@ -1,0 +1,19 @@
+/* Versione testuale del tour: nessuna grafica 3D, nessun JavaScript. */
+body.testo-pagina { padding-bottom: 6rem; }
+.barra { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; padding: .6rem 1rem; background: rgba(var(--nero-rgb), .94); border-bottom: 1px solid var(--linea); }
+.barra .indietro { margin-left: auto; font: 500 .8rem var(--mono); } .barra .indietro + .indietro { margin-left: 1rem; }
+main { max-width: 52rem; margin: 0 auto; padding: 1.5rem 1rem; }
+h1 { font: 700 clamp(1.6rem, 5vw, 2.3rem)/1.15 var(--titolo); margin: 1rem 0; }
+.scena { padding: 1.4rem 0; border-top: 1px solid var(--linea); }
+.scena h2 { font: 500 .9rem var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--grigio); margin: 0 0 .6rem; }
+.a-schermo { font: 400 .9rem var(--mono); color: var(--grigio); }
+ul.battute, ul.diagnosi { list-style: none; padding: 0; margin: .5rem 0; }
+ul.battute li { padding: .5rem 0; } .chi { font: 400 .75rem var(--mono); color: var(--grigio); text-transform: uppercase; letter-spacing: .1em; }
+.parola { font-size: 1.1rem; } .bloccata { color: var(--rosso); }
+ul.diagnosi li { padding: .35rem 0; font: 400 .85rem var(--mono); border-top: 1px solid var(--linea); }
+ul.diagnosi .ok { color: var(--ciano); } ul.diagnosi .avviso { color: var(--ambra); } ul.diagnosi .assente { color: var(--grigio); } ul.diagnosi .fallito { color: var(--rosso); }
+table { border-collapse: collapse; width: 100%; font-size: .8rem; margin: .6rem 0; display: block; overflow-x: auto; }
+th, td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--linea-tabella); vertical-align: top; } th { color: var(--grigio); font: 500 .72rem var(--mono); text-transform: uppercase; }
+.scritta-simulazione { color: var(--ambra); border: 1px solid var(--ambra); border-radius: .4rem; padding: .4rem .7rem; font: 500 .85rem var(--mono); }
+/* nomi di file lunghi (per esempio il file delle permutazioni): vanno a capo, la tabella non scorre di lato */
+table code { overflow-wrap: anywhere; word-break: break-word; }

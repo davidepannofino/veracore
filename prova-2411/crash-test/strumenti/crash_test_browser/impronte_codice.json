@@ -1,0 +1,122 @@
+{
+  "strumento": "crash test nel browser",
+  "byte_totali": 531418,
+  "file": {
+    "src/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byte": 0
+    },
+    "src/provenance.py": {
+      "sha256": "a5710031fc01ec2686a8441df4d5f61fb862e784395fa384c7a2413914a66093",
+      "byte": 3936
+    },
+    "src/ingest.py": {
+      "sha256": "cd75dc123be24cc90e6dca18b9b6009756b724ab2bd6b717e94182c1ce40541c",
+      "byte": 9303
+    },
+    "src/power_simulation.py": {
+      "sha256": "2c4ee57aa583604974fc5fa3afab05867fb6262a4be220a6e0146775833879cf",
+      "byte": 98587
+    },
+    "src/metrics.py": {
+      "sha256": "d7609b2031571353f02317085a5ba76d888218896fe93fb8ac03bfca0786d6fe",
+      "byte": 6016
+    },
+    "src/endpoint.py": {
+      "sha256": "1667fc5fb39f39e676c03f71521d5760e0ac1c68f6490e448adea6d4c1508c0a",
+      "byte": 20265
+    },
+    "src/descriptive.py": {
+      "sha256": "69c1713fffc4408cf2ec313f4e838ea39e02f90432e4631c88ba66f8ffe6caea",
+      "byte": 18846
+    },
+    "src/data_audit.py": {
+      "sha256": "d57f30b95a58ebd6157261eb15510181cf614de1c98a8e48e6b48c10093f0f19",
+      "byte": 54632
+    },
+    "src/prepara_s5.py": {
+      "sha256": "1c7de75b75427a48aff315fcd52543b544baadbf5778e4d263ebadf302af07e6",
+      "byte": 39314
+    },
+    "src/esegui_analisi_reale.py": {
+      "sha256": "c13c2a1a0fd480af57fe30c96f5d7cf0ca1082fc6ecf37d0d82cd3c02e03a5fe",
+      "byte": 14464
+    },
+    "src/previsione_esplorativa.py": {
+      "sha256": "ffd0e397e9fa942d9d2ce47002de14c716bba486a95781fcb958ff96666eddb5",
+      "byte": 51311
+    },
+    "strumenti/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byte": 0
+    },
+    "strumenti/crash_test.py": {
+      "sha256": "ce35a0e05a114310434d078e2a517d52e918106a57488b6d92cf28ed39e05e36",
+      "byte": 23941
+    },
+    "strumenti/crash_test_rapporto.py": {
+      "sha256": "ec0c30c928cb39adc9f5a665f6fa8e780134743009f81b7983def68cd4881611",
+      "byte": 30265
+    },
+    "strumenti/crash_test_rapporto_testi.json": {
+      "sha256": "eefe0a6fef473e976b2ab5cc0d1cc3788f002fc6879eec10daeea803ed4d928a",
+      "byte": 17747
+    },
+    "strumenti/crash_test_browser/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byte": 0
+    },
+    "strumenti/crash_test_browser/avvio_crash.py": {
+      "sha256": "74235223e711836a3a1e540a6986f33913215b99e5dde95af4079cea844353ba",
+      "byte": 4181
+    },
+    "web/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byte": 0
+    },
+    "web/evidenze/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byte": 0
+    },
+    "web/evidenze/formati.py": {
+      "sha256": "4d1fd7892b82ff46f1d9ce82521f0797657632d20339428a2d5b72602367a343",
+      "byte": 1867
+    },
+    "config/schema.yaml": {
+      "sha256": "3c6875bd27efa35105f91fab4a311a712a466a6db6acdfbb21bbaba0429db116",
+      "byte": 3563
+    },
+    "config/design.yaml": {
+      "sha256": "a680ed3d68e17d732bda03ce1bac88da264b997b7b689414ea4d027bdd390311",
+      "byte": 8282
+    },
+    "strumenti/crash_test_browser/impronte_kryeziu.json": {
+      "sha256": "e95b497165b4991e78acd20d047e9bbf6df81a7e691a70a1b957641b448e6a30",
+      "byte": 699
+    },
+    "data/SINTETICO_crash_test/SINTETICO_esempio.csv": {
+      "sha256": "e74e24b8022af06fed56001a946650c1ec48a415daf0d74ff157e8194a6c61f0",
+      "byte": 35223
+    },
+    "web/fornitori/font/space-grotesk-latin-500-normal.woff2": {
+      "sha256": "1b1a8131d9edf975d9decee81e2f2bf504812f7a4f498e5500f28a613e22e64c",
+      "byte": 13312
+    },
+    "web/fornitori/font/space-grotesk-latin-700-normal.woff2": {
+      "sha256": "35f8aec56cfd5cbfdb03cc68733a54a0b05bb3617ffcd5fd332badc0b045ca55",
+      "byte": 12840
+    },
+    "web/fornitori/font/inter-latin-400-normal.woff2": {
+      "sha256": "8909904ab6c872eb994093482a88a28eca2cd95912d7b6fecd72103b0dc07edc",
+      "byte": 23664
+    },
+    "web/fornitori/font/inter-latin-600-normal.woff2": {
+      "sha256": "f9a06e79cd3a2a20951c0f0e28f66dd0e6d3fda73911d640a2125c8fcb78f21a",
+      "byte": 24452
+    },
+    "web/fornitori/font/ibm-plex-mono-latin-400-normal.woff2": {
+      "sha256": "08949f728dc52d528e69b1667d15c89a5686a4ee9a296ff90983985f99c380f7",
+      "byte": 14708
+    }
+  }
+}

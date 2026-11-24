@@ -1,0 +1,166 @@
+/* generato da config/design.yaml con strumenti/genera_design.py: non modificare */
+@font-face { font-family: "Space Grotesk"; font-weight: 400; src: url("../fornitori/font/space-grotesk-latin-400-normal.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Space Grotesk"; font-weight: 500; src: url("../fornitori/font/space-grotesk-latin-500-normal.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Space Grotesk"; font-weight: 700; src: url("../fornitori/font/space-grotesk-latin-700-normal.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Inter"; font-weight: 400; src: url("../fornitori/font/inter-latin-400-normal.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Inter"; font-weight: 500; src: url("../fornitori/font/inter-latin-500-normal.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Inter"; font-weight: 600; src: url("../fornitori/font/inter-latin-600-normal.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 400; src: url("../fornitori/font/ibm-plex-mono-latin-400-normal.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 500; src: url("../fornitori/font/ibm-plex-mono-latin-500-normal.woff2") format("woff2"); font-display: block; }
+:root {
+  --nero: #000000;
+  --ciano: #35D6E8;
+  --ambra: #F2B84B;
+  --grigio: #858D99;
+  --rosso: #E35D66;
+  --bianco: #F4F7FA;
+  --nero-rgb: 0, 0, 0;
+  --ciano-rgb: 53, 214, 232;
+  --ambra-rgb: 242, 184, 75;
+  --grigio-rgb: 133, 141, 153;
+  --rosso-rgb: 227, 93, 102;
+  --bianco-rgb: 244, 247, 250;
+  --linea: #1B1F24;
+  --bordo-spento: #2A2F36;
+  --testo-spento: #4D545E;
+  --testo-vuoto: #5B626C;
+  --parola-in-attesa: #8A929D;
+  --indicatore: #B9C0C9;
+  --fondo-console: #111111;
+  --fondo-pulsante: #1C1C1C;
+  --fondo-telecomando: #0B0D10;
+  --fondo-primario: #07191C;
+  --linea-testo: #222222;
+  --bordo-testo: #333333;
+  --qr-fondo: #FFFFFF;
+  --qr-modulo: #000000;
+  --testo-chiaro: #C9D1DA;
+  --testo-secondario: #A9B2BC;
+  --ciano-chiaro: #7CE6F1;
+  --fondo-codice: #0B0E11;
+  --fondo-barra: #080A0C;
+  --bordo-pannello: #262B32;
+  --bordo-medio: #3B424B;
+  --linea-tabella: #14181D;
+  --fondo-campo: #0D1117;
+  --bordo-campo: #3A424D;
+  --grigio-leggibile: #9AA2AD;
+  --rosso-leggibile: #FF8A92;
+  --linea-rgb: 27, 31, 36;
+  --bordo-spento-rgb: 42, 47, 54;
+  --testo-spento-rgb: 77, 84, 94;
+  --testo-vuoto-rgb: 91, 98, 108;
+  --parola-in-attesa-rgb: 138, 146, 157;
+  --indicatore-rgb: 185, 192, 201;
+  --fondo-console-rgb: 17, 17, 17;
+  --fondo-pulsante-rgb: 28, 28, 28;
+  --fondo-telecomando-rgb: 11, 13, 16;
+  --fondo-primario-rgb: 7, 25, 28;
+  --linea-testo-rgb: 34, 34, 34;
+  --bordo-testo-rgb: 51, 51, 51;
+  --qr-fondo-rgb: 255, 255, 255;
+  --qr-modulo-rgb: 0, 0, 0;
+  --testo-chiaro-rgb: 201, 209, 218;
+  --testo-secondario-rgb: 169, 178, 188;
+  --ciano-chiaro-rgb: 124, 230, 241;
+  --fondo-codice-rgb: 11, 14, 17;
+  --fondo-barra-rgb: 8, 10, 12;
+  --bordo-pannello-rgb: 38, 43, 50;
+  --bordo-medio-rgb: 59, 66, 75;
+  --linea-tabella-rgb: 20, 24, 29;
+  --fondo-campo-rgb: 13, 17, 23;
+  --bordo-campo-rgb: 58, 66, 77;
+  --grigio-leggibile-rgb: 154, 162, 173;
+  --rosso-leggibile-rgb: 255, 138, 146;
+  --stampa-testo: #14181D;
+  --stampa-secondario: #4A525C;
+  --stampa-fondo: #FFFFFF;
+  --stampa-linea: #C9CED4;
+  --stampa-griglia: #E6E9ED;
+  --stampa-accento: #00707C;
+  --stampa-accento-chiaro: #E3F4F6;
+  --stampa-ambra: #8A5300;
+  --stampa-ambra-fondo: #FCEFD3;
+  --stampa-grigio: #5B6370;
+  --stampa-grigio-fondo: #ECEEF1;
+  --stampa-banda: #D7DCE2;
+  --titolo: "Space Grotesk", "Inter", sans-serif;
+  --testo: "Inter", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --u: min(1vw, 1.8vh);
+  --t-numero: calc(var(--u) * 11);
+  --t-scheda-titolo: calc(var(--u) * 1.8);
+  --t-sottotitolo: calc(var(--u) * 1.45);
+  --t-sottotitolo-lungo: calc(var(--u) * 1.22);
+  --t-pannello-titolo: calc(var(--u) * 1.15);
+  --t-chip: calc(var(--u) * 1.05);
+  --t-chi: calc(var(--u) * 0.95);
+  --t-etichetta: calc(var(--u) * 0.85);
+  --spazio-xs: .3em;
+  --spazio-s: .6em;
+  --spazio-m: 1em;
+  --spazio-l: 1.5em;
+  --raggio-chip: 2em;
+  --raggio-carta: .4rem;
+  --raggio-pulsante: .4rem;
+  --raggio-pulsante-telefono: 16px;
+  --raggio-qr: .4em;
+  --durata-entra: .6s;
+  --durata-parola: .12s;
+  --durata-fonte: .4s;
+  --curva: ease;
+}
+/* Sito pubblico: stile comune a tutte le pagine. Palette D1, tipografia D2. Neutro e sobrio per ora: l'aspetto lo decide chi cura il design. */
+/* colori, caratteri e scale: le variabili di web/comune/design.css (config/design.yaml), messe prima di questo foglio */
+:root {
+  --barra: 3rem;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--nero); color: var(--bianco); font: 400 1rem/1.6 var(--testo); }
+a { color: var(--ciano); }
+code, .mono { font-family: var(--mono); }
+[hidden] { display: none !important; }
+/* focus sempre visibile (WCAG 2.4.7): anello ciano con alone nero, visibile su sfondo scuro e sulla sfera */
+:focus-visible { outline: 3px solid var(--ciano); outline-offset: 2px; box-shadow: 0 0 0 6px var(--nero); border-radius: .15rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+/* collegamento «Vai al contenuto»: il primo elemento raggiungibile da tastiera */
+.salta { position: fixed; top: .5rem; left: .5rem; z-index: 100; padding: .6rem 1rem; background: var(--nero); color: var(--bianco); border: 2px solid var(--ciano); border-radius: .3rem; font: 500 .9rem var(--testo); transform: translateY(-300%); }
+.salta:focus { transform: none; }
+main:focus { outline: none; box-shadow: none; }
+/* «riduci movimento» del sistema: niente animazioni ne' transizioni, scorrimento immediato */
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+.chip { display: inline-block; padding: .1em .7em; border: 1px solid var(--grigio); border-radius: 2em; font: 500 .75rem/1.5 var(--mono); color: var(--bianco); white-space: nowrap; }
+.chip.sintetico { border-color: var(--ambra); color: var(--ambra); }
+.chip.reale, .chip.firmata { border-color: var(--ciano); color: var(--ciano); }
+.chip.nonfirmata, .chip.guidata { border-style: dashed; color: var(--grigio); }
+.chip.p-SOURCE { border-color: var(--ciano); color: var(--ciano); }
+.chip.p-DATA { border-color: var(--ciano); background: var(--ciano); color: var(--nero); }
+.chip.p-CALCULATION { border-color: var(--ciano); background: var(--ciano); color: var(--nero); box-shadow: 0 0 0 .13em var(--nero), 0 0 0 .22em var(--ciano); }
+.chip.p-INFERENCE { border-color: var(--ambra); color: var(--nero); background: linear-gradient(90deg, var(--ambra) 50%, transparent 50%); }
+.chip.p-NOT_VERIFIED { border: 1px dashed var(--grigio); color: var(--grigio); }
+.chip.mod { border-color: var(--bianco); color: var(--bianco); }
+.chip.m-SIMULATION { border-style: dashed; }
+.etichette { display: inline-flex; gap: .4em; flex-wrap: wrap; margin-left: .6em; vertical-align: middle; }
+.etichette .chip { font-size: .68rem; padding: .02em .5em; }
+.nota { color: var(--grigio); font-size: .85rem; }
+.segnaposto { color: var(--ambra); font-style: italic; }
+
+/* scritte fisse (punto 5): sempre visibili, in fondo a ogni pagina. Una riga sottile di vetro scuro: piccola ma sempre leggibile */
+#barra-fissa { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: .1rem .9rem; padding: .35rem 1rem calc(.35rem + env(safe-area-inset-bottom, 0px)); font: 500 .72rem/1.35 var(--testo); letter-spacing: .01em;
+  background: rgba(var(--fondo-barra-rgb), .78); -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); border-top: 1px solid rgba(var(--bianco-rgb), .07); }
+#barra-fissa p { margin: 0; }
+#scritta-sintetico { color: var(--ambra); border: 1px solid var(--ambra); border-radius: 2em; padding: .05em .65em; font: 600 .64rem/1.4 var(--testo); letter-spacing: .16em; }
+#scritta-fissa { color: var(--bianco); }
+#barra-fissa #attribuzione { color: var(--grigio); font-size: .66rem; }
+@media (max-width: 760px) { #barra-fissa { gap: .05rem .55rem; padding: .3rem .7rem calc(.3rem + env(safe-area-inset-bottom, 0px)); font-size: .66rem; } #barra-fissa #attribuzione { font-size: .6rem; } }
+
+/* etichette per la giuria in italiano: parole, non codici; quindi il carattere del testo, non il monospaziato */
+.chip.prov, .chip.mod { font-family: var(--testo); letter-spacing: .01em; }
+
+/* vincolo 1: il risultato principale non compare mai da solo; la didascalia lo accompagna ovunque (testo dai dati) */
+.didascalia-risultato { margin: .6rem 0 0; padding-left: .6rem; border-left: 2px solid var(--ciano); color: var(--testo-chiaro); font: 400 .85rem/1.45 var(--testo); }
+/* vincolo 4: didascalie piccole al posto dei badge; ambra per le ipotesi, la simulazione in grigio leggibile */
+.didascalia-esplorativa { margin: .4rem 0 0; padding-left: .6rem; border-left: 2px dashed var(--ambra); color: var(--testo-chiaro); font: 400 .8rem/1.45 var(--testo); }
+.didascalia-simulazione { margin: .4rem 0 0; padding-left: .6rem; border-left: 2px dotted var(--grigio-leggibile); color: var(--testo-chiaro); font: 400 .8rem/1.45 var(--testo); }
