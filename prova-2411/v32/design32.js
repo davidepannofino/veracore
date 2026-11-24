@@ -2190,7 +2190,8 @@
           const fissoA = apertura ? apertura.querySelector('.tuffo-fisso') : null;
           const finale = q1('[data-tuffo="finale"]');
           const registroBox = q1('[data-registro]');
-          const righe = qq('.registro-riga');
+          const righe = registroBox ? [...registroBox.querySelectorAll('.registro-riga')] : [];
+          const frasiPasso = qq('.frase-passo[data-righe]');   // B4: solo il registro che scorre
           const scansione = q1('.scansione');
           const passi = qq('.passo');
           const metodo = q1('.metodo');
@@ -2257,6 +2258,8 @@
                   return;
               rigaAtt = k;
               righe.forEach((r, i) => r.classList.toggle('attiva', i === k));
+              // B8 (25/11): la frase del paragrafo del problema che parla della riga accesa
+              frasiPasso.forEach((f) => f.classList.toggle('accesa', k >= 0 && (' ' + f.getAttribute('data-righe') + ' ').indexOf(' ' + k + ' ') >= 0));
               const r = righe[Math.max(0, k)];
               if (!r)
                   return;
