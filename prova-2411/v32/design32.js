@@ -4023,7 +4023,7 @@
                   catch (e) { }
               }
           };
-          const sbloccaVoce = () => {      // dentro un gesto: l'elemento suona un istante di silenzio, poi e' sbloccato (iOS)
+          const sbloccaVoce = () => {      // dentro un gesto: un istante di silenzio sblocca l elemento (iOS)
               if (!voceEl || voceEl.dataset.sbloccato)
                   return;
               try {
@@ -4292,7 +4292,7 @@
               } }, 2600);
           };
           const chiediVera = (testo, id, via) => {
-              if (id && voceAttiva && AUDIO[id] && AUDIO[id].file)     // N1.7: l'audio si chiede gia' al tocco sulla domanda
+              if (id && voceAttiva && AUDIO[id] && AUDIO[id].file)     // N1.7: l audio parte gia dal tocco sulla domanda
                   precaricaVoce(AUDIO[id].file);
               if (!CATALOGO) {
                   avvisa((PAROLE.stati_js || {}).caricamento || '');
