@@ -13,6 +13,7 @@
   const PR = PAROLE.risposta || {};
   const PC = PAROLE.core || {};
   const PV = PAROLE.video || {};
+  const CAMPIONI = (PAROLE.metodo || {}).campioni || [];   // N2.1 (notte 25/11): «Campione 1» e «Campione 2» sulla figura del metodo
   const STATI = PC.stati || {};
   const VIA = PC.via || {};
   const SAT_ETI = PC.satelliti || {};
@@ -1169,7 +1170,7 @@
                           ctx.lineTo(A[0] - 70 * dpr, A[1] + 74 * dpr);
                           ctx.lineTo(A[0] - 120 * dpr, A[1] + 74 * dpr);
                           ctx.stroke();
-                          pillola('', A[0] - 124 * dpr, A[1] + 74 * dpr, COL.brina, lab.camp, 'right', false);
+                          pillola(String(CAMPIONI[0] || '').toUpperCase(), A[0] - 124 * dpr, A[1] + 74 * dpr, COL.brina, lab.camp, 'right', false);
                       }
                       if (B) {
                           ctx.strokeStyle = rgba(col, lab.camp * 0.35);
@@ -1178,7 +1179,7 @@
                           ctx.lineTo(B[0] + 70 * dpr, B[1] - 74 * dpr);
                           ctx.lineTo(B[0] + 120 * dpr, B[1] - 74 * dpr);
                           ctx.stroke();
-                          pillola('', B[0] + 124 * dpr, B[1] - 74 * dpr, COL.brina, lab.camp, 'left', false);
+                          pillola(String(CAMPIONI[1] || '').toUpperCase(), B[0] + 124 * dpr, B[1] - 74 * dpr, COL.brina, lab.camp, 'left', false);
                       }
                   }
                   if (FA && FB && lab.sec > 0.02) {
@@ -2204,6 +2205,7 @@
           const frasiPasso = qq('.frase-passo[data-righe]');   // B4: solo il registro che scorre
           const scansione = q1('.scansione');
           const passi = qq('.passo');
+          const pistaPassi = q1('.passi-pista'), olPassi = q1('.passi');
           const metodo = q1('.metodo');
           const risSez = q1('.risultato');
           const celleP = qq('.paz');
@@ -5104,6 +5106,75 @@
                   const d = new Date();
                   orologio.textContent = [d.getHours(), d.getMinutes(), d.getSeconds()].map((x) => String(x).padStart(2, '0')).join(':');
               } }, 1000);
+          // N2.5 (notte 25/11): le sezioni aggiunte («E con due campioni?», «Provalo», il registro di «Verificalo tu», il piede) entrano
+          // come quelle del prototipo: titolo e righe salgono di 24 px con una sfocatura che si scioglie, a scalare di 80 ms; l'occhiello
+          // si compone (data-scramble). Con il movimento ridotto restano ferme e visibili
+          const ENTRATE = [['#due-campioni', '.colonna > *'], ['#provalo', '.provalo-testo > *, .registro-provalo .registro-testa'],
+              ['#core', '.finale-testo .registro.fermo, .finale-testo .tasti'], ['footer.piede', '.piede-griglia > div, .piede-fondo']];
+          if (!fermo && win.IntersectionObserver)
+              ENTRATE.forEach(([sel, figli]) => {
+                  const sez = q1(sel);
+                  if (!sez)
+                      return;
+                  const el = Array.prototype.slice.call(sez.querySelectorAll(figli));
+                  el.forEach((x, k) => { x.classList.add('entra'); x.style.setProperty('--k', String(Math.min(k, 12))); });
+                  const io = new win.IntersectionObserver((vv) => { if (vv.some((v) => v.isIntersecting)) {
+                      io.disconnect();
+                      sez.classList.add('entrata');
+                  } }, { threshold: 0, rootMargin: '0px 0px -18% 0px' });     // anche per le sezioni piu' alte dello schermo
+                  io.observe(sez);
+              });
+          // N2.4 (notte 25/11): le righe del registro di «Provalo» compaiono una alla volta quando la sezione entra; poi la riga accesa
+          // passa dall'una all'altra, piano (ferma con il movimento ridotto)
+          const provSez = q1('#provalo');
+          if (provSez) {
+              const righeP = Array.prototype.slice.call(provSez.querySelectorAll('.riga-provalo'));
+              const accendi = () => {
+                  provSez.classList.add('in-vista');
+                  if (fermo || !righeP.length)
+                      return;
+                  let k = 0;
+                  ogni(() => { if (doc.hidden)
+                      return; righeP.forEach((r, i) => r.classList.toggle('attiva', i === k)); k = (k + 1) % righeP.length; }, 2400);
+              };
+              if (fermo || !win.IntersectionObserver)
+                  provSez.classList.add('in-vista');
+              else {
+                  const ioP = new win.IntersectionObserver((vv) => { if (vv.some((v) => v.isIntersecting)) {
+                      ioP.disconnect();
+                      accendi();
+                  } }, { threshold: 0.3 });
+                  ioP.observe(provSez);
+              }
+          }
+          // N2.3 (notte 25/11): i due numeri di «E con due campioni?» contano fino al valore del file e la barra dell'intervallo si
+          // disegna quando la sezione entra; con il movimento ridotto compaiono fermi
+          const dueSez = q1('#due-campioni');
+          if (dueSez) {
+              const conte = Array.prototype.slice.call(dueSez.querySelectorAll('[data-conta]'));
+              const parti = () => {
+                  dueSez.classList.add('in-vista-due');
+                  if (fermo)
+                      return;
+                  conte.forEach((el) => {
+                      const fine = Number(el.getAttribute('data-conta')) || 0, t0 = win.performance.now();
+                      const passo = (t) => { const k = Math.min(1, (t - t0) / 1200); el.textContent = String(Math.round(fine * (1 - Math.pow(1 - k, 3))));
+                          if (k < 1)
+                              win.requestAnimationFrame(passo); };
+                      el.textContent = '0';
+                      win.requestAnimationFrame(passo);
+                  });
+              };
+              if (fermo || !win.IntersectionObserver)
+                  dueSez.classList.add('in-vista-due');
+              else {
+                  const ioDue = new win.IntersectionObserver((vv) => { if (vv.some((v) => v.isIntersecting)) {
+                      ioDue.disconnect();
+                      parti();
+                  } }, { threshold: 0.35 });
+                  ioDue.observe(dueSez);
+              }
+          }
           const osservati = qq('[data-scramble]');
           if (!fermo && win.IntersectionObserver) {
               this._io = new win.IntersectionObserver((vv) => {
@@ -5401,12 +5472,17 @@
               if (metodo) {
                   const rm = metodo.getBoundingClientRect();
                   if (rm.bottom > 0 && rm.top < H) {
+                      // N2.1 (notte 25/11, bozza 2): i passi sono fermi uno sull'altro; quale e' attivo lo dice la corsa della pista
+                      // (stessa lunghezza di prima, quindi lo scorrimento non cambia); si vede solo il passo attivo
                       let att = -1;
-                      for (let i = 0; i < offPassi.length; i++) {
-                          if (rm.top + offPassi[i] < H * (st ? 0.8 : 0.58))
-                              att = i;
+                      if (pistaPassi && passi.length) {
+                          const rp = pistaPassi.getBoundingClientRect();
+                          const soglia = H * (st ? 0.8 : 0.58);           // la stessa soglia dei passi di prima
+                          const q = (soglia - rp.top) / Math.max(1, rp.height - (H - soglia));   // 1 quando la pista finisce in fondo allo schermo
+                          if (rp.top < soglia)
+                              att = Math.max(0, Math.min(passi.length - 1, Math.floor(lim(q) * passi.length)));
                       }
-                      passi.forEach((p, i) => p.classList.toggle('spento', att >= 0 && i !== att));
+                      passi.forEach((p, i) => { p.classList.toggle('attivo', i === Math.max(0, att)); p.classList.toggle('spento', i !== Math.max(0, att)); });
                       const modo = att >= 0 ? Number(passi[att].getAttribute('data-modo')) : 0;
                       if (cores.metodo && visibile(cores.metodo.tela, H)) {
                           const cw = cores.metodo.tela.clientWidth;
