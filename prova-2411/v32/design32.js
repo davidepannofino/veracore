@@ -5628,6 +5628,27 @@
                   }
                   return;
               }
+              if (video && (tgt === video || (tgt.closest('[data-video-hud]') && !tgt.closest('button, a, input, .tacca')))) {   // Video del portale (25/11): il tocco sul video lo fa partire con l'audio
+                  const auB = q1('[data-audio]');
+                  if (video.paused || video.ended || video.muted) {
+                      video.muted = false;
+                      utentePausa = false;
+                      avviato = true;
+                      if (video.paused || video.ended) {
+                          const pr = video.play();
+                          if (pr && pr.catch)
+                              pr.catch(() => { avviato = false; statoPlay(); });
+                      }
+                  }
+                  else {
+                      utentePausa = true;
+                      video.pause();
+                  }
+                  if (auB)
+                      auB.setAttribute('aria-pressed', video.muted ? 'false' : 'true');
+                  statoPlay();
+                  return;
+              }
               if (tgt.closest('[data-play]')) {
                   if (!video)
                       return;
