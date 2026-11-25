@@ -1217,3 +1217,11 @@ html.ingresso-chiuso,html.ingresso-chiuso body{overflow:hidden;overscroll-behavi
    per lo sfondo e il colore: cosi' la riga attiva cambia subito, con un solo stile (fondo scuro e filo arancione insieme) */
 .registro-provalo .registro-riga{transition-property:opacity,transform,filter,background-color,color;
   transition-duration:.5s,.5s,.5s,.12s,.12s;transition-delay:calc(var(--i,1) * .45s),calc(var(--i,1) * .45s),calc(var(--i,1) * .45s),0s,0s}
+/* P4 (25/11): le righe e le parole di titolo e paragrafo dei passi ereditano tutto il carattere (una regola vecchia, «ol.passi li span»,
+   le portava a 14,4 px con interlinea 16: a schermo largo titolo e paragrafo diventavano piccoli e schiacciati) */
+.passi-pista .passo :is(.passo-titolo,.passo-testo) span{font:inherit;letter-spacing:inherit;text-transform:inherit;line-height:inherit;color:inherit}
+/* P5 (25/11, telefono): «Il risultato» chiude i suoi livelli (le «Fonti» a z-index 30) in un contesto proprio, sotto il foglio di «E con
+   due campioni?» (z-index 7): niente della sezione sotto passa sopra il foglio che sale */
+@media (max-width:899px){.pagina.modo-movimento #risultato{position:relative;z-index:1}}
+/* P5: mentre una «Fonti» e' aperta (dopo un tocco) la sezione torna sopra il foglio, cosi' il riquadro aperto si legge (U1) */
+@media (max-width:899px){.pagina.modo-movimento #risultato:has(.fonti-32[open]){z-index:8}}

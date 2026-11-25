@@ -2284,6 +2284,7 @@
               passi.forEach((p) => { p.style.opacity = ''; p.style.visibility = ''; p.style.filter = ''; p.style.transform = ''; });
               righeMov.on = true;
               ascolta(win, 'resize', () => { if (righeMov.on && larghezza() !== righeMov.w) spezzaRighe(); });
+              ascolta(win, 'orientationchange', () => dopo(() => { if (righeMov.on) spezzaRighe(); }, 250));      // P4: anche alla rotazione
           }
           const risSez = q1('.risultato');
           const foglioEl = q1('#due-campioni');
@@ -4021,7 +4022,8 @@
               if (t === 'voce_inizio')
                   suono.voce(true);
               else if (t === 'voce_fine' || t === 'voce_non_disponibile')
-                  suono.voce(false); });
+                  suono.voce(false);
+              segueVoceViva(e.detail || {}); });
           ascolta(doc, 'visibilitychange', () => suono.nascosto(doc.hidden));
           let ultimoPassato = null;
           ascolta(root, 'pointerover', (e) => {
@@ -4129,6 +4131,10 @@
               return Math.min(1, Math.sqrt(s / (buf.length / 2)) * 5.2);
           };
           const tempoClip = (c) => {
+              if (c.modo === 'viva') {         // P1: il tempo e' quello della parola che la voce vera sta dicendo
+                  const pa = c.d.parole || [], k = c.d.viva.k;
+                  return k >= 0 && pa[k] ? pa[k][1] : -1;
+              }
               if (c.attesa)
                   return 0;
               if (c.pausa)
@@ -4272,8 +4278,53 @@
                       catch (x) { }
                   } }, no);
           };
+          // P1 (25/11): la risposta dal vivo con la voce in arrivo. rispostaViva.viva = { offs, n, k, finita, nd }: offs e n per frase
+          // (dalle parole della risposta), k = ultima parola detta dalla voce vera. Solo con voce_non_disponibile si torna al tempo stimato
+          let rispostaViva = null;
+          const vivaATempo = (c) => {
+              const pa = c.d.parole || [], k = Math.max(0, c.d.viva.k);
+              c.modo = 'tempo';
+              c.vel = 1;
+              c.inizio = win.performance.now() - (pa[k] ? pa[k][1] : 0) * 1000;
+          };
+          const segueVoceViva = (x) => {
+              const e = rispostaViva;
+              if (!e || !e.viva)
+                  return;
+              const v = e.viva, i = Number(x.indice);
+              if (x.tipo === 'voce_inizio' && Number.isFinite(i) && v.offs[i] !== undefined)
+                  v.k = Math.max(v.k, v.offs[i]);
+              else if (x.tipo === 'voce_parola' && Number.isFinite(i) && v.offs[i] !== undefined)
+                  v.k = Math.max(v.k, v.offs[i] + Math.min(Math.max(0, Number(x.n) || 0), v.n[i] - 1));
+              else if (x.tipo === 'voce_fine') {
+                  if (x.interrotta === false) {
+                      v.k = (e.parole || []).length - 1;
+                      v.finita = true;
+                  }
+                  else if (clip && clip.d === e && clip.modo === 'viva')
+                      vivaATempo(clip);
+                  rispostaViva = null;
+              }
+              else if (x.tipo === 'voce_non_disponibile') {
+                  v.nd = true;
+                  if (clip && clip.d === e && clip.modo === 'viva')
+                      vivaATempo(clip);
+              }
+          };
           const avviaClip = (d, onParola, fine) => {
-              fermaClip();
+              if (d && d.viva) {         // P1 (25/11): la voce del servizio di QUESTA risposta non si mette in pausa
+                  if (sorgente) {
+                      try {
+                          sorgente.onended = null;
+                          sorgente.stop();
+                      }
+                      catch (e) { }
+                      sorgente = null;
+                  }
+                  clip = null;
+              }
+              else
+                  fermaClip();
               mostraRigaVoce(false);
               if (!d) {
                   if (fine)
@@ -4285,6 +4336,15 @@
               const c = { d, onParola, fine, k: -1, inizio: win.performance.now(), modo: 'tempo', vel: voceAttiva || d.cadenza ? 1 : VEL_MUTO, finita: false, attesa: false, t0: 0 };
               clip = c;
               impostaStato('parla');
+              if (d.viva) {             // P1: le parole seguono la voce vera (voce_inizio, voce_parola, voce_fine del widget)
+                  c.modo = 'viva';
+                  c.vel = 1;
+                  if (d.viva.nd)
+                      vivaATempo(c);
+                  else
+                      d.viva.limite = dopo(() => { if (clip === c && c.modo === 'viva' && d.viva.k < 0) vivaATempo(c); }, 6000);
+                  return;
+              }
               if (!voceAttiva || !d.url || !voceEl)
                   return;
               precaricaVoce(d.url);
@@ -4347,7 +4407,7 @@
                   }
                   const dur = c.d.durata || 0;
                   const scaduto = !c.attesa && win.performance.now() - c.inizio > (dur / (c.vel || 1) + 4) * 1000;
-                  const finito = c.modo === 'tempo' ? tc >= dur : (c.finita || tc >= dur + 0.3 || scaduto);
+                  const finito = c.modo === 'tempo' ? tc >= dur : c.modo === 'viva' ? !!c.d.viva.finita : (c.finita || tc >= dur + 0.3 || scaduto);
                   // N1.7: con l'elemento audio la sfera segue il tempo delle parole (nessun analizzatore: su iOS da' problemi)
                   const w = pa[k], inParola = !!(w && tc >= w[1] && tc <= (w[2] || w[1] + 0.3));
                   const ampT = c.attesa ? 0.06 : (c.modo === 'buffer' && analizzatore ? livello(analizzatore, bufA) : c.modo === 'elemento' ? (inParola ? 0.13 : 0.05) : 0.04);
@@ -4586,6 +4646,7 @@
               impostaStato('inviata');
               anelloTesto = ANELLO('inviata');
               attesaViva = { g, domanda, fonte: null };
+              trattieniVoce(true);       // P2 (25/11): la voce del servizio aspetta che la risposta cominci a essere detta
               campo.value = domanda;
               try {
                   campo.dispatchEvent(new Event('input', { bubbles: true }));
@@ -5118,6 +5179,8 @@
               anelloTesto = ANELLO('fonte') + String(f.file).toUpperCase() + (f.riga ? ' · ' + String(PR.riga || '').toUpperCase() + ' ' + f.riga : '') + ' · ';
           };
           const parlaRisposta = (e, g, esito) => {
+              root.dispatchEvent(new CustomEvent('vera-parla', { bubbles: true }));     // P2 (25/11): per le prove (la scena comincia a dire)
+              trattieniVoce(false);
               mostraNodo('risposta');
               if (nT.etirisposta)
                   nT.etirisposta.textContent = (PC.nodi || {}).risposta || '';
@@ -5189,6 +5252,19 @@
                       nota: ok ? [d.esito === 'verificata' ? PR.nota_verificata : PR.nota_preparata, d.riga_fonti].filter(Boolean).join(' · ') : '' });
                   if (fusEl)
                       fusEl.textContent = '';
+                  // P1 (25/11): con la voce del servizio in arrivo la scena seguira' la voce vera
+                  rispostaViva = null;
+                  if (ok && d.esito === 'verificata' && d.voce && d.voce.stato === 'in_arrivo' && voceAttiva) {
+                      const q = ((DATI_RC.storie[e.id] || {}).quadri) || [];
+                      if (q.length === frasi.length)
+                          e.viva = { offs: q.map((x) => x.i0), n: q.map((x) => x.i1 - x.i0 + 1), k: -1, finita: false, nd: false };
+                      else {
+                          let o = 0; const offs = [], n = [];
+                          frasi.forEach((fr) => { const c = fr.split(/\s+/).filter(Boolean).length; offs.push(o); n.push(c); o += c; });
+                          e.viva = { offs, n, k: -1, finita: false, nd: false };
+                      }
+                      rispostaViva = e;
+                  }
                   if (ok)
                       impostaStato('parla');
                   mostraFonte(e, f, g, esito);
@@ -5558,6 +5634,8 @@
                   VV.sblocca(sez);
           };
           voceServizio(false);      // M4: la voce del servizio segue lo stato iniziale del tasto (accesa se non spenta)
+          const trattieniVoce = (si) => { const sez = doc.querySelector('section.vera'); if (sez && win.VeraVoce && win.VeraVoce.trattieni)
+              win.VeraVoce.trattieni(sez, si); };
           const fermaVoceServizio = () => { const sez = doc.querySelector('section.vera'); if (sez && win.VeraVoce && win.VeraVoce.ferma)
               win.VeraVoce.ferma(sez); };
           // F4 (chiusura 25/11): domande su VERA, sul gruppo e sul progetto vanno subito alla risposta preparata, senza il servizio.

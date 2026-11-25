@@ -25,7 +25,11 @@
     // (per esempio prima di un audio preparato: mai due voci insieme)
     sblocca: (radice) => { if (radice && radice.veraVoceComandi) radice.veraVoceComandi.sblocca(); },
     zittisci: (radice, si) => { if (radice && radice.veraVoceComandi) radice.veraVoceComandi.zittisci(si); },
-    ferma: (radice) => { if (radice && radice.veraVoceComandi) radice.veraVoceComandi.ferma(); } };
+    ferma: (radice) => { if (radice && radice.veraVoceComandi) radice.veraVoceComandi.ferma(); },
+    // P2 (25/11): trattieni(radice, true): le frasi in arrivo si mettono in coda senza suonare (il tempo massimo del primo audio conta
+    // l'arrivo, non la riproduzione); trattieni(radice, false): parte la coda. La pagina trattiene all'invio e rilascia quando la
+    // risposta comincia a essere detta sullo schermo
+    trattieni: (radice, si) => { if (radice && radice.veraVoceComandi) radice.veraVoceComandi.trattieni(si); } };
 
   function avvia(radice) {
     if (!("voce" in radice.dataset) || radice.veraVoce) return;
@@ -37,6 +41,7 @@
     let turno = null;
     let domandaN = 0;    // una domanda nuova (riga nuova_domanda da vera.js) chiude il turno di quella prima
     let pendenti = [];   // righe {"voce"} arrivate prima del testo a schermo (si suonano solo dopo)
+    let trattenuto = false;   // P2: la pagina tiene ferma la coda finche' la risposta non comincia a essere detta
 
     const emetti = (tipo, dati = {}) => radice.dispatchEvent(new CustomEvent("vera-voce", { detail: { tipo, ...dati }, bubbles: true }));
     // N1.7 (notte 25/11): la voce esce da un solo elemento audio, quello della pagina (audio[data-voce-vera], lo stesso della voce
@@ -80,6 +85,7 @@
       sblocca,
       zittisci: (si) => { st.zittita = Boolean(si); tasto.setAttribute("aria-pressed", String(st.zittita)); if (st.zittita && turno) ferma(turno, "zittita"); },
       ferma: () => { if (turno) ferma(turno, "nuova_domanda"); },
+      trattieni: (si) => { trattenuto = Boolean(si); if (!trattenuto && turno) avanti(turno); },
     };
     tasto.addEventListener("click", () => {
       st.zittita = !st.zittita;
@@ -147,7 +153,7 @@
       if (!st.sbloccata) return rinuncia(t, "senza_gesto");
       if (!r.voce || r.voce.stato !== "in_arrivo") return rinuncia(t, r.voce ? r.voce.stato : "voce_spenta_sul_server");
       statoVoce.textContent = "";
-      t.timer = setTimeout(() => { if (t.primo_ms === null) rinuncia(t, "tempo_scaduto"); }, attesaMs);
+      t.timer = setTimeout(() => { if (t.primo_ms === null && !(trattenuto && t.audio.size)) rinuncia(t, "tempo_scaduto"); }, attesaMs);
       for (const x of vecchie) riga(t, x);
     });
 
@@ -159,7 +165,15 @@
       }
       const v = x.voce;
       if (!v) return;
-      if (v.stato !== "pronta" || !v.audio_base64) return rinuncia(t, v.motivo || "non_disponibile");
+      if (t.finisci) return;   // P3: dopo una frase senza voce non si aggiunge niente
+      if (v.stato !== "pronta" || !v.audio_base64) {
+        // P3 (25/11): se la voce e' gia' cominciata (o ci sono frasi arrivate), le frasi arrivate prima si dicono fino in fondo, poi la voce
+        // si ferma (mai a meta' parola), il testo resta e compare «voce non disponibile: solo testo»
+        if (t.primo_ms === null && !t.audio.size) return rinuncia(t, v.motivo || "non_disponibile");
+        t.finisci = v.motivo || "non_disponibile";
+        t.taglio = Number.isFinite(Number(v.indice)) ? Number(v.indice) : Infinity;
+        return avanti(t);
+      }
       let url;
       try { url = indirizzo(v); } catch { return rinuncia(t, "audio_non_leggibile"); }
       t.fonti.push(url);
@@ -173,9 +187,19 @@
       const tipo = String(v.formato || "").startsWith("wav") ? "audio/wav" : "audio/mpeg";
       return URL.createObjectURL(new Blob([b], { type: tipo }));
     }
+    function concludi(t) {   // P3: fine delle frasi arrivate prima della frase senza voce
+      if (t.giu || t.chiuso) return;
+      t.giu = t.finisci;
+      statoVoce.textContent = `${SOLO_TESTO[0].toUpperCase()}${SOLO_TESTO.slice(1)}.`;
+      st.misure.push({ turno: t.n, primo_audio_ms: t.primo_ms, fallita: t.finisci, dopo_frasi: t.prossimo });
+      emetti("voce_non_disponibile", { turno: t.n, motivo: t.finisci, testo: SOLO_TESTO, dopo_frasi: t.prossimo });
+      radice.dispatchEvent(new CustomEvent("vera-registro", { detail: { fonte: "voce", testo: SOLO_TESTO, motivo: t.finisci }, bubbles: true }));
+      ferma(t, t.finisci);
+    }
     function avanti(t) {
-      if (t.suona || t.giu || t.chiuso) return;
+      if (t.suona || t.giu || t.chiuso || trattenuto) return;
       const indice = t.ordine[t.prossimo];
+      if (t.finisci && (indice === undefined || indice >= t.taglio || !t.audio.has(indice))) return concludi(t);
       if (indice === undefined || !t.audio.has(indice)) return;
       const { url, parole } = t.audio.get(indice);
       const el = elemento();
@@ -193,7 +217,8 @@
         if (t.chiuso) return;
         t.suona = false;
         t.prossimo++;
-        if (t.prossimo >= t.ordine.length && !t.giu) ferma(t, "fine");
+        if (t.finisci) avanti(t);
+        else if (t.prossimo >= t.ordine.length && !t.giu) ferma(t, "fine");
         else avanti(t);
       };
       el.addEventListener("ended", fine);
