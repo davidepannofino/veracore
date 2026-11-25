@@ -943,3 +943,7 @@ body.interne32 .tabella-scorre{max-width:100%;overflow-x:auto}
 body.interne32 main{overflow-wrap:anywhere}
 body.interne32 main>section#verifica,body.interne32 main>section#verifica>.colonna{padding-top:0!important;margin-top:0!important;border-top:0!important}
 body.interne32 main>h1.titolo-pagina{border:0;padding:0}
+/* N4 (notte 25/11): il video del portale; distintivi e riga del video di riserva in vista sopra il portale e nel riquadro */
+.video-etichette{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0}
+.video-nota{max-width:46ch;margin:0;color:var(--ink-2,inherit)}
+.vhud-basso .fonte+.fonte{margin-top:-6px}

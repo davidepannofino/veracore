@@ -2360,9 +2360,13 @@
           };
           const statoPlay = () => { if (video && tPlayTesto)
               tPlayTesto.textContent = (!video.paused && !video.ended ? PV.pausa : PV.riproduci) || ''; };
+          // N4.4 (notte 25/11): su telefono il video non parte da solo; si scarica solo l'inizio (preload="metadata") fino al tocco
+          const videoTelefono = !!(win.matchMedia && (win.matchMedia('(max-width: 599px)').matches || win.matchMedia('(pointer: coarse) and (max-height: 500px)').matches));
           if (video) {
               if (statico)
                   video.preload = 'none';
+              if (videoTelefono && tPlayTesto)
+                  tPlayTesto.textContent = PV.riproduci || tPlayTesto.textContent;
               ascolta(video, 'timeupdate', aggiornaVideo);
               ascolta(video, 'loadedmetadata', () => {
                   if (durata && isFinite(video.duration))
@@ -5539,11 +5543,11 @@
                       }
                       if (video) {
                           const dentroV = visV && rv > 6 && vo > 0.04;
-                          if (dentroV && !utentePausa && video.paused && !video.ended && !avviato && win.performance.now() > viaggioFino) {
+                          if (dentroV && !videoTelefono && !utentePausa && video.paused && !video.ended && !avviato && win.performance.now() > viaggioFino) {
                               avviato = true;
                               const pr = video.play();
                               if (pr && pr.catch)
-                                  pr.catch(() => { avviato = false; });
+                                  pr.catch(() => { avviato = false; statoPlay(); });
                           }
                           if (!dentroV && !video.paused) {
                               video.pause();
