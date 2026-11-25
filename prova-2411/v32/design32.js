@@ -2241,6 +2241,14 @@
           }
           const metodo = q1('.metodo');
           const risSez = q1('.risultato');
+          const foglioEl = q1('#due-campioni');
+          let pFoglio = '', foglioSu = false, lineaFoglio = null;
+          if (foglioEl && !fermo) {          // G1: la linea tratteggiata e' il bordo alto del foglio e si disegna con lo scorrimento
+              lineaFoglio = doc.createElement('span');
+              lineaFoglio.className = 'foglio-linea';
+              lineaFoglio.setAttribute('aria-hidden', 'true');
+              foglioEl.insertBefore(lineaFoglio, foglioEl.firstChild);
+          }
           const celleP = qq('.paz');
           const videoSez = q1('.video-sez');
           const pista = q1('[data-video-pista]');
@@ -5513,7 +5521,11 @@
           const dueSez = q1('#due-campioni');
           if (dueSez) {
               const conte = Array.prototype.slice.call(dueSez.querySelectorAll('[data-conta]'));
+              let partito = false;
               const parti = () => {
+                  if (partito)
+                      return;
+                  partito = true;
                   dueSez.classList.add('in-vista-due');
                   if (fermo)
                       return;
@@ -5526,9 +5538,10 @@
                       win.requestAnimationFrame(passo);
                   });
               };
+              root.__dueParti = parti;          // G1: nel movimento parte quando il foglio copre il 35% dello schermo (ciclo unico)
               if (fermo || !win.IntersectionObserver)
                   dueSez.classList.add('in-vista-due');
-              else {
+              else if (false) {
                   const ioDue = new win.IntersectionObserver((vv) => { if (vv.some((v) => v.isIntersecting)) {
                       ioDue.disconnect();
                       parti();
@@ -5575,9 +5588,7 @@
                   ioC.observe(cifra);
               }
           }
-          const tDue = q1('#t-due-campioni');
-          if (tDue && !fermo)
-              tDue.setAttribute('data-scramble', '1');
+          // G1: il titolo «E con due campioni?» si compone quando il foglio copre il 35% dello schermo (nel ciclo unico)
           const osservati = qq('[data-scramble]');
           if (!fermo && win.IntersectionObserver) {
               this._io = new win.IntersectionObserver((vv) => {
@@ -6110,11 +6121,36 @@
                       }
                   }
               }
+              // G1 (25/11): «E con due campioni?» e' un foglio che sale sopra «Il risultato»: una sola variabile --p (0-1), scritta solo
+              // dentro quel tratto e solo quando cambia; al 35% dello schermo coperto partono titolo, etichetta, numeri e barre
+              if (foglioEl && risSez && !fermo) {
+                  const rd = foglioEl.getBoundingClientRect();
+                  if (rd.top < H + 200 && rd.bottom > 0) {
+                      const pS = lim((H - rd.top) / ((st ? 0.5 : 0.7) * H)).toFixed(3);
+                      if (pS !== pFoglio) {
+                          pFoglio = pS;
+                          if (!st)          // sotto i 900 px il risultato non e' fisso: si muove solo il foglio (fotogrammi)
+                              risSez.style.setProperty('--p', pS);
+                          if (lineaFoglio)  // la variabile solo sulla linea (un elemento piccolo), non su tutto il foglio
+                              lineaFoglio.style.setProperty('--p', pS);
+                      }
+                      if (!foglioSu && H - rd.top >= 0.35 * H) {
+                          foglioSu = true;
+                          foglioEl.classList.add('foglio-su');
+                          if (root.__dueParti)
+                              root.__dueParti();
+                          const tD = q1('#t-due-campioni');
+                          if (tD)
+                              mescola(tD);
+                      }
+                  }
+              }
               if (risSez && celleP.length) {
                   const r = risSez.getBoundingClientRect();
                   if (r.bottom > 0 && r.top < H) {
                       if (!st) {
-                          const corsa = Math.max(1, r.height - H);
+                          // G1 (25/11): con il movimento l'ultimo tratto di 0,7 schermi della pista e' quello del foglio che sale
+                          const corsa = Math.max(1, r.height - H - (fermo ? 0 : 0.7 * H));
                           qR = morbido(qR, lim(-r.top / corsa));
                           segnaPazienti(Math.floor(lim(qR / 0.8) * celleP.length + 0.0001));
                       }

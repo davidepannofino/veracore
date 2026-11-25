@@ -1073,3 +1073,30 @@ body.crash32 #rapporto.cornice-entra{animation:u8-cornice .7s var(--ease-roll) b
 .barra-core .voce{order:3}
 .barra-core .invia{order:4;margin-left:auto;flex:0 1 auto;min-width:120px}
 }
+/* G1 (25/11): «E con due campioni?» e' un foglio che sale sopra «Il risultato» (solo transform e opacita', una variabile --p) */
+@media (prefers-reduced-motion:no-preference){
+.pagina.modo-movimento .due-campioni{position:relative;z-index:7;margin-top:calc(var(--vh)*-.7);border-radius:28px 28px 0 0;box-shadow:0 -14px 36px rgba(20,21,23,.10);align-items:flex-start;padding-top:72px}
+.pagina.modo-movimento .due-campioni::before,.pagina.modo-movimento .due-campioni.entrata::before{left:28px;right:28px;top:0;transform:scaleX(var(--p,0));transition:none}
+.pagina.modo-movimento .risultato .ris-fisso>.contenitore{transform:translateY(calc(var(--p,0)*-40px)) scale(calc(1 - var(--p,0)*.06));opacity:calc(1 - var(--p,0)*.65);transform-origin:50% 40%}
+.pagina.modo-movimento .due-campioni .etichetta-addendum.in-vista{clip-path:inset(0 100% 0 0);transition:clip-path .8s var(--ease-roll) .15s}
+.pagina.modo-movimento .due-campioni.foglio-su .etichetta-addendum.in-vista{clip-path:inset(0 0 0 0)}
+.pagina.modo-movimento .risultato{padding-bottom:calc(var(--vh)*.7)}
+}
+@media (prefers-reduced-motion:no-preference) and (min-width:900px){
+.pagina.modo-movimento .risultato{height:calc(var(--vh)*3.1);padding-bottom:0}
+}
+.pagina.modo-fermo .due-campioni{margin-top:96px}
+@media (prefers-reduced-motion:no-preference) and (max-width:899px){
+.pagina.modo-movimento .risultato{padding-bottom:0}
+.pagina.modo-movimento .due-campioni{margin-top:calc(var(--vh)*-.14)}
+}
+@media (prefers-reduced-motion:no-preference) and (max-width:899px){
+.pagina.modo-movimento .risultato .ris-fisso>.contenitore{transform:none;opacity:1}
+}
+/* G1: la linea come elemento piccolo con --p (il foglio intero non si ricalcola), l'ombra come sfumatura corta sopra il bordo */
+@media (prefers-reduced-motion:no-preference){
+.pagina.modo-movimento .due-campioni::before,.pagina.modo-movimento .due-campioni.entrata::before{content:none}
+.pagina.modo-movimento .due-campioni{box-shadow:none}
+.pagina.modo-movimento .due-campioni::after{content:"";position:absolute;left:0;right:0;top:-18px;height:18px;border-radius:28px 28px 0 0;background:linear-gradient(rgba(20,21,23,0),rgba(20,21,23,.07));pointer-events:none}
+.pagina.modo-movimento .due-campioni .foglio-linea{position:absolute;left:28px;right:28px;top:0;border-top:1px dashed var(--tratteggio);transform-origin:left;transform:scaleX(var(--p,0));pointer-events:none}
+}
