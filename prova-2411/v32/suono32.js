@@ -21,6 +21,9 @@
               const SUONO_K = 0.029 * 6.6, SUONO_ARIA = 0.16, SUONO_UI = 0.55 * 2.4, SUONO_CLIC = 0.2;
               // M3 (mattino 25/11): tutto piu' basso, stesso timbro (un solo fattore sull'uscita): ambiente tra -38 e -34 dBFS RMS, clic 0,06-0,10
               const SUONO_GIU = 0.4;
+              // V6 (25/11): livelli del tuffo e del pensiero (picco del tuffo sull'uscita tra 0,08 e 0,14, misurato con suonotuffo32.mjs)
+              const V6_SOFFIO = 0.81, V6_BASSA = 0.32, V6_CODA = 0.08, V6_PENSA = 0.012;
+              let ultimoPensa = 0, tuffoFino = 0;
               const hz = (semi) => RE2 * Math.pow(2, semi / 12);
               const ora = () => (ctx ? ctx.currentTime : 0);
               const verso = (p, v, t0, tau) => { try {
@@ -328,16 +331,34 @@
                   rifiuto: (t) => { tono(hz(19), 'triangle', 0.7, 0.02, t, -0.1, 0.01); tono(hz(12), 'triangle', 0.8, 0.018, t + 0.05, 0.1, 0.01); },
                   core_on: (t) => { [36, 43].forEach((s, i) => tono(hz(s), 'sine', 1.4, 0.014, t + i * 0.09, (i ? 0.25 : -0.25), 0.12)); },
                   core_off: (t) => { [43, 36].forEach((s, i) => tono(hz(s), 'sine', 0.9, 0.01, t + i * 0.08, (i ? -0.25 : 0.25), 0.06)); },
-                  ascolta: (t) => { tono(hz(55), 'sine', 0.12, 0.02, t, -0.15, 0.003); tono(hz(62), 'sine', 0.16, 0.017, t + 0.055, 0.15, 0.003); }
+                  ascolta: (t) => { tono(hz(55), 'sine', 0.12, 0.02, t, -0.15, 0.003); tono(hz(62), 'sine', 0.16, 0.017, t + 0.055, 0.15, 0.003); },
+                  // V6 (25/11): il tuffo verso la pagina della risposta, circa 1,2 s: soffio filtrato che sale, nota bassa che scende, coda
+                  // luminosa. Su un suo livello (tuffoG), che la voce di VERA abbassa; mai due insieme (vedi evento)
+                  tuffo: (t) => {
+                      const g = ctx.createGain(); g.gain.value = voce ? 0.3 : 1; g.connect(n.ui); n.tuffoG = g;
+                      const s = ctx.createBufferSource(); s.buffer = n.tick; s.loop = true;
+                      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.1;
+                      f.frequency.setValueAtTime(220, t); f.frequency.exponentialRampToValueAtTime(3200, t + 0.9);
+                      const gs = ctx.createGain(); gs.gain.setValueAtTime(0.0001, t); gs.gain.exponentialRampToValueAtTime(V6_SOFFIO, t + 0.55); gs.gain.exponentialRampToValueAtTime(0.0001, t + 1.15);
+                      s.connect(f); f.connect(gs); gs.connect(g); s.start(t); s.stop(t + 1.2);
+                      const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(hz(19), t); o.frequency.exponentialRampToValueAtTime(hz(7), t + 1.0);
+                      const go = ctx.createGain(); go.gain.setValueAtTime(0.0001, t); go.gain.exponentialRampToValueAtTime(V6_BASSA, t + 0.12); go.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+                      o.connect(go); go.connect(g); o.start(t); o.stop(t + 1.15);
+                      [60, 64, 67].forEach((sm, i) => { const c = ctx.createOscillator(); c.type = 'sine'; c.frequency.value = hz(sm);
+                          const gc = ctx.createGain(); const t1 = t + 0.62 + i * 0.07; gc.gain.setValueAtTime(0.0001, t1); gc.gain.exponentialRampToValueAtTime(V6_CODA, t1 + 0.01); gc.gain.exponentialRampToValueAtTime(0.0001, t1 + 0.5);
+                          c.connect(gc); gc.connect(g); c.start(t1); c.stop(t1 + 0.55); });
+                  },
+                  // V6: mentre aspetta la risposta dal vivo, impulsi morbidi e lenti (uno al secondo, attacco lento)
+                  pensa: (t) => { tono(hz(36), 'sine', 0.55, V6_PENSA, t, 0, 0.22); tono(hz(43), 'sine', 0.45, V6_PENSA * 0.5, t + 0.04, 0, 0.25); }
               };
               const elab = () => {
                   if (!n || !acceso || nascosto || stato !== 'inviata' || presenza < 0.5)
                       return;
-                  const t = ora() + 0.02;
-                  const note = [48, 52, 55, 57, 60];
-                  const k = 1 + Math.floor(Math.random() * 2);
-                  for (let i = 0; i < k; i++)
-                      tono(hz(note[Math.floor(Math.random() * note.length)]), 'sine', 0.022, 0.0045, t + Math.random() * 0.12, (Math.random() - 0.5) * 1.4, 0.002);
+                  const adesso = performance.now();       // V6 (25/11): impulsi morbidi e lenti al posto dei tic veloci
+                  if (adesso - ultimoPensa < 1050 || adesso < tuffoFino)
+                      return;
+                  ultimoPensa = adesso;
+                  EV.pensa(ora() + 0.02);
               };
               const avviaTimer = () => {
                   if (!timerDeriva)
@@ -422,6 +443,8 @@
                       if (!n)
                           return;
                       const t = ora();
+                      if (n.tuffoG)
+                          verso(n.tuffoG.gain, voce ? 0.3 : 1, t, 0.08);       // V6: il tuffo si abbassa quando parla VERA
                       if (voce) {
                           verso(n.ambD.gain, 0.28, t, 0.12);
                           verso(n.ambF.frequency, 520, t, 0.15);
@@ -446,6 +469,12 @@
                       if (!n || !acceso || nascosto || !EV[nome])
                           return;
                       const t = ora() + 0.005;
+                      if (nome === 'tuffo') {           // V6: mai due tuffi insieme
+                          const adesso = performance.now();
+                          if (adesso < tuffoFino)
+                              return;
+                          tuffoFino = adesso + 1300;
+                      }
                       if (nome === 'passa') {
                           const adesso = performance.now();
                           if (adesso - ultimoPassa < 90)

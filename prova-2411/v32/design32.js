@@ -2249,40 +2249,39 @@
               });
           }
           const metodo = q1('.metodo');
-          // L3 (25/11): cambio di passo con una sola maschera leggera che attraversa la colonna del testo dal basso in alto in 0,5 s;
-          // il testo cambia a meta' corsa, il blocco nuovo sale di 24 px, il numero grande (opacita' 0,08) passa da 1,12 a 1.
-          // Solo transform e opacity (Web Animations, sul compositore); con il movimento ridotto o la pagina ferma non c'e'.
-          const maschera = (() => {
-              if (fermo || !olPassi || !passi.length || !olPassi.animate) return null;
-              const ma = doc.createElement('li'); ma.className = 'passi-maschera'; ma.setAttribute('aria-hidden', 'true');
-              const gr = doc.createElement('li'); gr.className = 'passi-grande'; gr.setAttribute('aria-hidden', 'true');
-              olPassi.appendChild(gr); olPassi.appendChild(ma);
-              for (let n = olPassi; n && n !== doc.documentElement; n = n.parentElement) {   // il fondo vero della sezione
-                  const f = win.getComputedStyle(n).backgroundColor;
-                  if (f && f !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(f)) { ma.style.setProperty('--fondo-maschera', f); break; }
-              }
-              root.classList.add('con-maschera');
-              let visto = 0, mostrato = 0, cambioA = -1;
-              const scrivi = (i, sale) => {
-                  passi.forEach((p, k) => { const o = k === i ? '1' : '0'; if (p.__o !== o) { p.__o = o; p.style.opacity = o; p.style.visibility = k === i ? '' : 'hidden'; } });
-                  gr.textContent = String(i + 1).padStart(2, '0');
-                  if (sale) {
-                      passi[i].animate([{ transform: 'translateY(24px)' }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.7,.2,1)' });
-                      gr.animate([{ transform: 'scale(1.12)' }, { transform: 'none' }], { duration: 600, easing: 'cubic-bezier(.2,.7,.2,1)' });
-                  }
-              };
-              scrivi(0, false);
-              return {
-                  mostra(att, t) {
-                      if (att !== visto) {
-                          visto = att; cambioA = t + 250;
-                          ma.animate([{ transform: 'translateY(100%)', opacity: 1 }, { transform: 'translateY(-100%)', opacity: 1 }], { duration: 500, easing: 'cubic-bezier(.45,0,.25,1)' });
-                      }
-                      if (cambioA >= 0 && t >= cambioA) { cambioA = -1; mostrato = visto; scrivi(mostrato, true); }
-                      return mostrato;
-                  }
-              };
-          })();
+          // V5 (25/11): «Come lo misuriamo» con righe legate allo scorrimento (al posto della maschera di L3). Titolo e frase divisi in
+          // righe una volta sola (e al cambio di larghezza); il ciclo scrive una sola variabile, --t (la posizione nella corsa dei passi),
+          // sul contenitore: ogni riga calcola posizione e opacita' con calc() e il suo ritardo con :nth-child (design32.css). Sicurezza:
+          // se nei primi due cambi un fotogramma dura in media piu' di 28 ms, si torna alla dissolvenza semplice del mattino (M6)
+          const righeMov = { on: false, w: 0, tS: '', campioni: [], cambi: 0, ultimo: -1 };
+          const spezzaRighe = () => {
+              righeMov.w = larghezza();
+              passi.forEach((p) => {
+                  p.querySelectorAll('.passo-titolo, .passo-testo').forEach((el) => {
+                      const testo = el.__testo || (el.__testo = el.textContent);
+                      el.textContent = '';
+                      const parole = [];
+                      testo.split(/\s+/).filter(Boolean).forEach((w, k) => {
+                          if (k) el.appendChild(doc.createTextNode(' '));
+                          const sp = doc.createElement('span'); sp.textContent = w; if (/\d/.test(w)) sp.className = 'cifra';
+                          el.appendChild(sp); parole.push(sp);
+                      });
+                      const righeT = []; let y0 = null;
+                      parole.forEach((sp) => { const y = sp.offsetTop; if (y0 === null || Math.abs(y - y0) > 4) { righeT.push([]); y0 = y; } righeT[righeT.length - 1].push(sp); });
+                      el.textContent = '';
+                      righeT.forEach((r) => { const o = doc.createElement('span'); o.className = 'riga-p'; const d = doc.createElement('span'); d.className = 'riga-in';
+                          r.forEach((sp, k) => { if (k) d.appendChild(doc.createTextNode(' ')); d.appendChild(sp); }); o.appendChild(d); el.appendChild(o); });
+                  });
+              });
+          };
+          if (!fermo && olPassi && passi.length && win.CSS && win.CSS.supports && win.CSS.supports('width', 'clamp(0px, calc(1px * 2), 3px)')) {
+              root.classList.add('righe-mov');
+              spezzaRighe();
+              if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(() => { if (righeMov.on) spezzaRighe(); });
+              passi.forEach((p) => { p.style.opacity = ''; p.style.visibility = ''; p.style.filter = ''; p.style.transform = ''; });
+              righeMov.on = true;
+              ascolta(win, 'resize', () => { if (righeMov.on && larghezza() !== righeMov.w) spezzaRighe(); });
+          }
           const risSez = q1('.risultato');
           const foglioEl = q1('#due-campioni');
           let pFoglio = '', foglioSu = false, lineaFoglio = null;
@@ -2643,6 +2642,9 @@
               const SUONO_K = 0.029 * 6.6, SUONO_ARIA = 0.16, SUONO_UI = 0.55 * 2.4, SUONO_CLIC = 0.2;
               // M3 (mattino 25/11): tutto piu' basso, stesso timbro (un solo fattore sull'uscita): ambiente tra -38 e -34 dBFS RMS, clic 0,06-0,10
               const SUONO_GIU = 0.4;
+              // V6 (25/11): livelli del tuffo e del pensiero (picco del tuffo sull'uscita tra 0,08 e 0,14, misurato con suonotuffo32.mjs)
+              const V6_SOFFIO = 0.81, V6_BASSA = 0.32, V6_CODA = 0.08, V6_PENSA = 0.012;
+              let ultimoPensa = 0, tuffoFino = 0;
               const hz = (semi) => RE2 * Math.pow(2, semi / 12);
               const ora = () => (ctx ? ctx.currentTime : 0);
               const verso = (p, v, t0, tau) => { try {
@@ -2950,16 +2952,34 @@
                   rifiuto: (t) => { tono(hz(19), 'triangle', 0.7, 0.02, t, -0.1, 0.01); tono(hz(12), 'triangle', 0.8, 0.018, t + 0.05, 0.1, 0.01); },
                   core_on: (t) => { [36, 43].forEach((s, i) => tono(hz(s), 'sine', 1.4, 0.014, t + i * 0.09, (i ? 0.25 : -0.25), 0.12)); },
                   core_off: (t) => { [43, 36].forEach((s, i) => tono(hz(s), 'sine', 0.9, 0.01, t + i * 0.08, (i ? -0.25 : 0.25), 0.06)); },
-                  ascolta: (t) => { tono(hz(55), 'sine', 0.12, 0.02, t, -0.15, 0.003); tono(hz(62), 'sine', 0.16, 0.017, t + 0.055, 0.15, 0.003); }
+                  ascolta: (t) => { tono(hz(55), 'sine', 0.12, 0.02, t, -0.15, 0.003); tono(hz(62), 'sine', 0.16, 0.017, t + 0.055, 0.15, 0.003); },
+                  // V6 (25/11): il tuffo verso la pagina della risposta, circa 1,2 s: soffio filtrato che sale, nota bassa che scende, coda
+                  // luminosa. Su un suo livello (tuffoG), che la voce di VERA abbassa; mai due insieme (vedi evento)
+                  tuffo: (t) => {
+                      const g = ctx.createGain(); g.gain.value = voce ? 0.3 : 1; g.connect(n.ui); n.tuffoG = g;
+                      const s = ctx.createBufferSource(); s.buffer = n.tick; s.loop = true;
+                      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.1;
+                      f.frequency.setValueAtTime(220, t); f.frequency.exponentialRampToValueAtTime(3200, t + 0.9);
+                      const gs = ctx.createGain(); gs.gain.setValueAtTime(0.0001, t); gs.gain.exponentialRampToValueAtTime(V6_SOFFIO, t + 0.55); gs.gain.exponentialRampToValueAtTime(0.0001, t + 1.15);
+                      s.connect(f); f.connect(gs); gs.connect(g); s.start(t); s.stop(t + 1.2);
+                      const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(hz(19), t); o.frequency.exponentialRampToValueAtTime(hz(7), t + 1.0);
+                      const go = ctx.createGain(); go.gain.setValueAtTime(0.0001, t); go.gain.exponentialRampToValueAtTime(V6_BASSA, t + 0.12); go.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+                      o.connect(go); go.connect(g); o.start(t); o.stop(t + 1.15);
+                      [60, 64, 67].forEach((sm, i) => { const c = ctx.createOscillator(); c.type = 'sine'; c.frequency.value = hz(sm);
+                          const gc = ctx.createGain(); const t1 = t + 0.62 + i * 0.07; gc.gain.setValueAtTime(0.0001, t1); gc.gain.exponentialRampToValueAtTime(V6_CODA, t1 + 0.01); gc.gain.exponentialRampToValueAtTime(0.0001, t1 + 0.5);
+                          c.connect(gc); gc.connect(g); c.start(t1); c.stop(t1 + 0.55); });
+                  },
+                  // V6: mentre aspetta la risposta dal vivo, impulsi morbidi e lenti (uno al secondo, attacco lento)
+                  pensa: (t) => { tono(hz(36), 'sine', 0.55, V6_PENSA, t, 0, 0.22); tono(hz(43), 'sine', 0.45, V6_PENSA * 0.5, t + 0.04, 0, 0.25); }
               };
               const elab = () => {
                   if (!n || !acceso || nascosto || stato !== 'inviata' || presenza < 0.5)
                       return;
-                  const t = ora() + 0.02;
-                  const note = [48, 52, 55, 57, 60];
-                  const k = 1 + Math.floor(Math.random() * 2);
-                  for (let i = 0; i < k; i++)
-                      tono(hz(note[Math.floor(Math.random() * note.length)]), 'sine', 0.022, 0.0045, t + Math.random() * 0.12, (Math.random() - 0.5) * 1.4, 0.002);
+                  const adesso = performance.now();       // V6 (25/11): impulsi morbidi e lenti al posto dei tic veloci
+                  if (adesso - ultimoPensa < 1050 || adesso < tuffoFino)
+                      return;
+                  ultimoPensa = adesso;
+                  EV.pensa(ora() + 0.02);
               };
               const avviaTimer = () => {
                   if (!timerDeriva)
@@ -3044,6 +3064,8 @@
                       if (!n)
                           return;
                       const t = ora();
+                      if (n.tuffoG)
+                          verso(n.tuffoG.gain, voce ? 0.3 : 1, t, 0.08);       // V6: il tuffo si abbassa quando parla VERA
                       if (voce) {
                           verso(n.ambD.gain, 0.28, t, 0.12);
                           verso(n.ambF.frequency, 520, t, 0.15);
@@ -3068,6 +3090,12 @@
                       if (!n || !acceso || nascosto || !EV[nome])
                           return;
                       const t = ora() + 0.005;
+                      if (nome === 'tuffo') {           // V6: mai due tuffi insieme
+                          const adesso = performance.now();
+                          if (adesso < tuffoFino)
+                              return;
+                          tuffoFino = adesso + 1300;
+                      }
                       if (nome === 'passa') {
                           const adesso = performance.now();
                           if (adesso - ultimoPassa < 90)
@@ -3201,7 +3229,7 @@
                       const m = p * T_IN;
                       if (!suonato && verso > 0 && m > 2150) {
                           suonato = true;
-                          suono.evento('apertura');
+                          suono.evento('tuffo');       // V6 (25/11): il passaggio «spaziale» verso la risposta
                       }
                       const c = bez((m - 2200) / 1000), d = bez((m - 3200) / 800);
                       f = {
@@ -3706,7 +3734,7 @@
                   }
                   tuffo.avvia(cameraPossibile() ? 'camera' : 'dissolvenza');
                   if (tuffo.modo !== 'camera' && !fermo)
-                      suono.evento('apertura');
+                      suono.evento('tuffo');
                   tuffo.avanza();
                   posaStrato(win.performance.now());
                   if (D.storie)
@@ -5527,10 +5555,13 @@
           };
           if (inputCore) {
               // N1.3: il tocco sul campo apre solo la tastiera; l'elenco si apre dal suo tasto o mentre si scrive
-              ascolta(inputCore, 'input', () => { segnaCampo(); if (inputCore.value.trim())
-                  apriElenco(inputCore.value);
-              else
-                  chiudiElenco(); });
+              // V2 (25/11): scrivendo l'elenco non si apre piu' da solo (copriva la sfera): si apre solo dal suo tasto; se e' gia'
+              // aperto, le parole lo filtrano
+              ascolta(inputCore, 'input', () => { segnaCampo(); if (elencoAperto())
+                  apriElenco(inputCore.value.trim() ? inputCore.value : ''); });
+              ascolta(inputCore, 'focus', () => { if (fermo) return; tast.on = true; tast.y0 = win.scrollY; tast.q = Math.max(qF, 0.62); tast.kb = -1; });
+              ascolta(inputCore, 'blur', () => { if (!tast.on) return; tast.on = false; tast.kb = -1; tast.tieni = win.performance.now() + 900; if (formCore) formCore.style.transform = ''; });
+              ['wheel', 'touchstart', 'keydown'].forEach((ev) => ascolta(win, ev, () => { if (!tast.on) tast.tieni = 0; }));      // chi scorre davvero non viene trattenuto
               ascolta(inputCore, 'keydown', (e) => {
                   if (e.key === 'Escape' && elencoAperto()) {
                       e.preventDefault();
@@ -5659,9 +5690,15 @@
                   provSez.classList.add('in-vista');
                   if (fermo || !righeP.length)
                       return;
-                  let k = 0;
-                  ogni(() => { if (doc.hidden)
-                      return; righeP.forEach((r, i) => r.classList.toggle('attiva', i === k)); k = (k + 1) % righeP.length; }, 2400);
+                  // V3 (25/11): la riga accesa segue lo scorrimento, nessun timer: 01 quando la sezione entra, 02 a meta', 03 verso la
+                  // fine; ferma se non si scorre
+                  let kP = -1, coda = false;
+                  const posa = () => { coda = false; const r = provSez.getBoundingClientRect(), H = win.innerHeight;
+                      const q = lim((H - r.top) / Math.max(1, r.height + H));
+                      const k = Math.min(righeP.length - 1, Math.floor(lim((q - 0.18) / 0.6) * righeP.length));
+                      if (k !== kP) { kP = k; righeP.forEach((x, i) => x.classList.toggle('attiva', i === k)); } };
+                  ascolta(win, 'scroll', () => { if (!coda) { coda = true; win.requestAnimationFrame(posa); } }, { passive: true });
+                  posa();
               };
               if (fermo || !win.IntersectionObserver)
                   provSez.classList.add('in-vista');
@@ -5791,6 +5828,9 @@
           const sicuro = (v, d) => (typeof v === 'number' && isFinite(v) ? v : d);      // M1: mai NaN o infinito negli stati
           let qV = 0;
           let qF = 0;
+          // V2 (25/11): con il campo del Neural Core a fuoco (tastiera aperta) la scena resta ferma su «core aperto», il modulo si appoggia
+          // sopra la tastiera (visualViewport), la pagina non salta e la sfera si riduce nello spazio sopra il modulo
+          const tast = { on: false, y0: 0, q: 0, kb: -1, tieni: 0 };
           let qR = 0;
           let cameraSu = false;
           const posaCamera = (tf, sr, cx, cy) => {
@@ -6252,9 +6292,8 @@
                               const esce = i === passi.length - 1 ? 1 : 1 - liscio((u - (i + 1 - B / 2 + B * 0.4)) / (B * 0.6));
                               const o = sicuro(Math.min(entra, esce), 0);
                               const oS = o.toFixed(2), avS = lim(u - i).toFixed(2);
-                              if (maschera) {
+                              if (righeMov.on) {
                                   if (o > migliore) { migliore = o; att = i; }
-                                  if (p.__av !== avS) { p.__av = avS; p.style.setProperty('--av', avS); }
                                   return;
                               }
                               if (p.__o !== oS) {          // si scrive solo quando cambia (niente ricalcolo degli stili a ogni giro)
@@ -6274,7 +6313,25 @@
                               }
                           });
                       }
-                      if (maschera) att = maschera.mostra(att, t);
+                      if (righeMov.on && pistaPassi && olPassi) {
+                          const rp = pistaPassi.getBoundingClientRect(), ro = olPassi.getBoundingClientRect();
+                          const fermoDa = parseFloat(win.getComputedStyle(olPassi).top) || 0;
+                          const uT = sicuro(lim((fermoDa - rp.top) / Math.max(1, rp.height - ro.height)), 0) * passi.length;
+                          const tS = uT.toFixed(3);
+                          if (tS !== righeMov.tS) { righeMov.tS = tS; olPassi.style.setProperty('--t', tS); }
+                          const f = uT - Math.floor(uT), nel = f > 0.86 || f < 0.14;
+                          if (righeMov.cambi < 2 && nel && dt > 0) righeMov.campioni.push(dt * 1000);
+                          const b = Math.round(uT);
+                          if (righeMov.ultimo >= 0 && b !== righeMov.ultimo && !nel) {
+                              righeMov.cambi++;
+                              if (righeMov.cambi === 2 && righeMov.campioni.length >= 4) {
+                                  const media = righeMov.campioni.reduce((x, y) => x + y, 0) / righeMov.campioni.length;
+                                  root.__righeMedia = media;
+                                  if (media > 28) { righeMov.on = false; root.classList.remove('righe-mov'); passi.forEach((p) => { p.__o = null; }); }
+                              }
+                          }
+                          if (!nel) righeMov.ultimo = b;
+                      }
                       passi.forEach((p, i) => { p.classList.toggle('attivo', i === att); p.classList.toggle('spento', i !== att); });
                       const modo = att >= 0 && passi[att] ? Number(passi[att].getAttribute('data-modo')) : 0;
                       if (cores.metodo && visibile(cores.metodo.tela, H)) {
@@ -6382,7 +6439,7 @@
                   const vis = r.bottom > 0 && r.top < H;
                   if (vis) {
                       const corsa = Math.max(1, r.height - H);
-                      qF = morbido(qF, lim(-r.top / corsa));
+                      qF = tast.on ? tast.q : morbido(qF, lim(-r.top / corsa));
                       const q = qF;
                       const ass = facile(lim(q / 0.34));
                       const sp = facile(lim((q - 0.26) / 0.22));
@@ -6428,6 +6485,17 @@
                       }
                       else if (!fermo && win.performance.now() < attentaFino && inputCore && inputCore.value)
                           lc += 0.06;
+                      if (!tast.on && tast.tieni && (win.performance.now() < tast.tieni ? Math.abs(win.scrollY - tast.y0) > 2 && (win.scrollTo({ top: tast.y0, behavior: 'instant' }), true) : (tast.tieni = 0, false))) qF = tast.q;
+                      if (tast.on && formCore) {
+                          const vv = win.visualViewport;
+                          const kb = vv ? Math.max(0, Math.round(win.innerHeight - vv.height - vv.offsetTop)) : 0;
+                          if (kb !== tast.kb) { tast.kb = kb; formCore.style.transform = kb ? 'translateY(' + (-kb) + 'px)' : ''; }
+                          if (Math.abs(win.scrollY - tast.y0) > 2) win.scrollTo({ top: tast.y0, behavior: 'instant' });
+                          const vH = vv ? vv.height : H, alto = 64, basso = Math.min(formCore.getBoundingClientRect().top, (vv ? vv.offsetTop : 0) + vH) - 12;
+                          const spazio = Math.max(80, basso - alto);
+                          ccy = (alto + spazio / 2) / H;
+                          cR = Math.min(cR, spazio * 0.36, Wv * 0.36);
+                      }
                       scenaQ += (0 - scenaQ) * (1 - Math.exp(-dt * 3.6));
                       const qS = facile(lim(scenaQ));
                       const geo = geometriaScena(Wv, H, st, sf, Rb);

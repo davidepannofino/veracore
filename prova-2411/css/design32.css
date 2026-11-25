@@ -1120,9 +1120,69 @@ body.crash32 #rapporto.cornice-entra{animation:u8-cornice .7s var(--ease-roll) b
 .alone-scuro{background:radial-gradient(closest-side,rgba(255,138,48,1),rgba(255,138,48,.3) 45%,transparent)}
 @media (hover:none),(pointer:coarse),(prefers-reduced-motion:reduce){.alone{display:none}}
 
-/* L3 (25/11): maschera del cambio di passo (una sola, sopra la colonna del testo) e numero grande del passo a opacita' 0,08 */
-.passi-pista .passi>.passi-maschera,.passi-pista .passi>.passi-grande{grid-area:1/1;list-style:none;pointer-events:none}
-.passi-maschera{align-self:stretch;z-index:2;opacity:0;will-change:transform,opacity;contain:strict;background:linear-gradient(to top,transparent,var(--fondo-maschera,#0E1012) 28%,var(--fondo-maschera,#0E1012) 72%,transparent)}
-.passi-grande{align-self:center;justify-self:end;z-index:0;opacity:.08;will-change:transform;contain:layout paint;font:500 clamp(140px,18vw,260px)/1 var(--font-main);letter-spacing:-.06em;color:var(--brina)}
-.con-maschera .passi-pista .passo{transition:none;filter:none;transform:none;z-index:1}
-@media (prefers-reduced-motion:reduce){.passi-maschera,.passi-grande{display:none}}
+
+/* V1 (25/11): pagine interne in ordine. I capitoli non sono piu' alti uno schermo (regola della home in landing.css): un gruppo
+   chiuso occupa solo la sua riga; schede con occhiello numerato come nella home, spazi regolari; indice in cima; ritorno fisso */
+body.interne32 main section.capitolo{min-height:0;display:block;padding:40px 0 8px;border-top:0}
+body.interne32 main section.capitolo>.colonna{padding-top:0;padding-bottom:0}
+body.interne32 .indice-gruppi{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 40px}
+body.interne32 .indice-gruppi .indice-voce{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:999px;background:#E7E6E0;color:#141517;text-decoration:none;font-size:13px;line-height:1.25}
+body.interne32 .indice-gruppi .indice-voce:hover{background:#DDDCD5}
+body.interne32 main details.scheda{border:1px solid rgba(20,21,23,.14);border-radius:14px;background:rgba(255,255,255,.42);padding:0 20px;margin:0 0 16px;scroll-margin-top:96px}
+body.interne32 main details.scheda>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;min-height:44px;list-style:none}
+body.interne32 main details.scheda>summary::-webkit-details-marker{display:none}
+body.interne32 main details.scheda>summary::after{content:"›";font-size:20px;color:#5F6166;transition:transform .2s;flex:none}
+body.interne32 main details.scheda[open]>summary::after{transform:rotate(90deg)}
+body.interne32 main details.scheda[open]{padding-bottom:20px}
+.scheda-testa{display:block;min-width:0}
+.scheda-occhiello{font:500 11px/1 var(--font-main);text-transform:uppercase;letter-spacing:.08em;color:#C2560A;margin-right:10px;white-space:nowrap}
+.scheda-titolo{font:500 15px/1.3 var(--font-main);color:#141517}
+body.interne32 main details.scheda:not([open]) .scheda-titolo-blocco{overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2}
+.scheda-titolo-blocco,.scheda-riga{display:block}
+.scheda-riga{margin-top:4px;font-size:12.5px;line-height:1.4;color:#5F6166;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;line-clamp:1}
+body.interne32 main details.scheda table,body.interne32 main details.scheda .tabella-scorre{max-width:100%;overflow-x:auto}
+.torna-dove{position:fixed;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));z-index:40;display:inline-flex;align-items:center;min-height:44px;padding:0 16px;
+  border-radius:999px;background:#141517;color:#F2F1EC!important;text-decoration:none!important;font:500 13px/1 var(--font-main);box-shadow:0 6px 24px rgba(0,0,0,.18)}
+body.interne32 .pagina-piede{padding-bottom:72px}
+body.interne32 main{padding-bottom:88px}
+body.interne32 main details.scheda .scheda-titolo *{display:inline;margin:0 6px 0 0;padding:0;font-size:inherit}
+body.interne32 main details.scheda>summary{padding:10px 0}
+body.interne32 main details.scheda>summary .scheda-testa{display:block;line-height:1.3;font-size:15px}
+body.interne32 main details.scheda>summary .scheda-titolo-blocco{display:block;line-height:1.3}
+body.interne32 main details.scheda:not([open])>summary .scheda-titolo-blocco{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+body.interne32 main details.scheda>summary .scheda-riga{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;line-clamp:1;overflow:hidden;line-height:1.4}
+.torna-dove{transition:transform .28s var(--ease-standard,ease),opacity .28s var(--ease-standard,ease)}
+.torna-dove.via{transform:translateY(150%);opacity:0;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.torna-dove{transition:none}}
+
+/* V5 (25/11): «Come lo misuriamo», righe legate allo scorrimento. --t (posizione nella corsa: 0-6) sul contenitore; per il passo i
+   (nth-child) le sue righe entrano salendo da sotto (110% -> 0) nella prima parte della sua corsa e escono salendo e svanendo
+   nell'ultima, una dopo l'altra (ritardo da :nth-child); fuori da queste fasce il passo e' fermo e pieno. Solo transform e opacity */
+.righe-mov .passi-pista .passo{opacity:1!important;visibility:visible!important;filter:none!important;transform:none!important;transition:none;
+  --pe0:clamp(0,calc((var(--t,0) - var(--i,0)) / .06),1);--px0:clamp(0,calc((var(--t,0) - var(--i,0) - .93) / .06),1);
+  --av:clamp(0,calc(var(--t,0) - var(--i,0)),1)}
+.righe-mov .passi-pista .passo:nth-child(1){--i:0;--pe0:1}.righe-mov .passi-pista .passo:nth-child(2){--i:1}.righe-mov .passi-pista .passo:nth-child(3){--i:2}
+.righe-mov .passi-pista .passo:nth-child(4){--i:3}.righe-mov .passi-pista .passo:nth-child(5){--i:4}.righe-mov .passi-pista .passo:nth-child(6){--i:5}
+.righe-mov .passi-pista .passo:last-child{--px0:0}
+.righe-mov .passi-pista .riga-p{display:block;overflow:hidden;padding-bottom:.1em;margin-bottom:-.1em}
+.righe-mov .passi-pista .riga-in,.righe-mov .passi-pista .passo-num,.righe-mov .passi-pista .passo-tacche{display:block;will-change:transform,opacity;
+  --d:calc((var(--b,0) + var(--j,0)) * .004);
+  --pe:clamp(0,calc((var(--t,0) - var(--i,0) - var(--d)) / .03),1);--px:clamp(0,calc((var(--t,0) - var(--i,0) - .93 - var(--d)) / .03),1);
+  transform:translateY(calc((1 - var(--pe)) * 110% - var(--px) * 45%));opacity:min(var(--pe),calc(1 - var(--px)))}
+.righe-mov .passi-pista .passo-tacche{display:flex}
+.righe-mov .passi-pista .passo:nth-child(1) :is(.riga-in,.passo-num,.passo-tacche){--pe:1}
+.righe-mov .passi-pista .passo:last-child :is(.riga-in,.passo-num,.passo-tacche){--px:0}
+.righe-mov .passi-pista .passo-num{--b:0}.righe-mov .passi-pista .passo-titolo{--b:1}.righe-mov .passi-pista .passo-testo{--b:3}.righe-mov .passi-pista .passo-tacche{--b:5}
+.righe-mov .passi-pista .riga-p:nth-child(2) .riga-in{--j:1}.righe-mov .passi-pista .riga-p:nth-child(3) .riga-in{--j:2}.righe-mov .passi-pista .riga-p:nth-child(4) .riga-in{--j:3}
+.righe-mov .passi-pista .riga-p:nth-child(5) .riga-in{--j:4}.righe-mov .passi-pista .riga-p:nth-child(n+6) .riga-in{--j:5}
+.righe-mov .passi-pista .passo::before{animation:none!important;transform:scaleY(var(--av));opacity:min(var(--pe0),calc(1 - var(--px0)))}
+.righe-mov .passi-pista .passo .cnt-s{animation:none!important;transform:translateY(calc(var(--k,0) * -1em * var(--pe0)))}
+.righe-mov .passi-pista .cifra{position:relative;display:inline-block}
+.righe-mov .passi-pista .cifra::after{content:"";position:absolute;left:0;right:0;bottom:-.08em;height:2px;background:var(--accent);transform-origin:left;
+  transform:scaleX(clamp(0,calc((var(--t,0) - var(--i,0) - .1) / .12),1))}
+.righe-mov .passi-pista .passo:nth-child(1) .cifra::after{transform:scaleX(clamp(0,calc((var(--t,0) + .2) / .3),1))}
+.righe-mov .passi-pista .passo-tacche i.ora::after{animation:none!important}
+@media (prefers-reduced-motion:reduce){.righe-mov .passi-pista :is(.riga-in,.passo-num,.passo-tacche){transform:none;opacity:1}}
+.righe-mov .passi-pista .passo :is(.passo-titolo,.passo-testo) span:not(.riga-p):not(.riga-in):not(.cifra){display:inline}
+.righe-mov .passi-pista .passo :is(.passo-titolo,.passo-testo) span.cifra{display:inline-block}
+.righe-mov .passi-pista .passo :is(.passo-titolo,.passo-testo) span.riga-p,.righe-mov .passi-pista .passo :is(.passo-titolo,.passo-testo) span.riga-in{display:block}

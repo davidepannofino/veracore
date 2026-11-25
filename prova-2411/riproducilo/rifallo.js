@@ -48,7 +48,7 @@ async function rifai() {
   const corpo = $("rifallo-confronto").querySelector("tbody");
   corpo.replaceChildren();
   try {
-    const [sfera, regola] = await Promise.all(["../dati/sfera.json?v=9134bf2e", "rifallo/regola.json?v=231f50ae"].map(async (u) => {
+    const [sfera, regola] = await Promise.all(["../dati/sfera.json?v=9134bf2e", "rifallo/regola.json?v=9465d8e8"].map(async (u) => {
       const r = await fetch(u, { cache: "no-store" });
       if (!r.ok) throw new Error(u + ": " + r.status);
       return r.json();
