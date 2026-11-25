@@ -114,6 +114,8 @@
       clearTimeout(t.timer);
       if (t.suona) { try { elemento().pause(); } catch { /* gia' ferma */ } }
       t.suona = false;
+      // giro completo (25/11): prima di togliere i file in memoria l'elemento audio li lascia (altrimenti il browser segna un errore di caricamento)
+      try { const el = elemento(); if (t.fonti.includes(el.currentSrc || el.src)) { el.removeAttribute("src"); el.load(); } } catch { /* niente da lasciare */ }
       for (const u of t.fonti) { try { URL.revokeObjectURL(u); } catch { /* gia' tolto */ } }
       t.fonti = [];
       if (!t.chiuso) { t.chiuso = true; if (t.primo_ms !== null) emetti("voce_fine", { turno: t.n, interrotta: motivo !== "fine" }); }

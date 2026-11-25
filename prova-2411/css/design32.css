@@ -1225,3 +1225,23 @@ html.ingresso-chiuso,html.ingresso-chiuso body{overflow:hidden;overscroll-behavi
 @media (max-width:899px){.pagina.modo-movimento #risultato{position:relative;z-index:1}}
 /* P5: mentre una «Fonti» e' aperta (dopo un tocco) la sezione torna sopra il foglio, cosi' il riquadro aperto si legge (U1) */
 @media (max-width:899px){.pagina.modo-movimento #risultato:has(.fonti-32[open]){z-index:8}}
+/* S3 (25/11): il passo nuovo entra mentre il precedente esce (stessa fascia, alla fine della corsa del passo): le righe di chi esce
+   salgono fuori dalla loro riga mentre quelle di chi entra salgono da sotto, quindi c'e' sempre un titolo leggibile; il contatore
+   mostra sempre il numero del suo passo (entra con la sua riga) */
+.righe-mov .passi-pista .passo{--pe0:clamp(0,calc((var(--t,0) - var(--i,0) + .05) / .05),1);--px0:clamp(0,calc((var(--t,0) - var(--i,0) - .95) / .05),1)}
+.righe-mov .passi-pista .passo:nth-child(1){--pe0:1}
+.righe-mov .passi-pista .passo:last-child{--px0:0}
+.righe-mov .passi-pista .riga-in,.righe-mov .passi-pista .passo-num,.righe-mov .passi-pista .passo-tacche{
+  --pe:clamp(0,calc((var(--t,0) - var(--i,0) + .05 - var(--d)) / .05),1);--px:clamp(0,calc((var(--t,0) - var(--i,0) - .95 - var(--d)) / .05),1);
+  transform:translateY(calc((1 - var(--pe)) * 110% - var(--px) * 110%));opacity:min(clamp(0,calc(var(--pe) * 2.5),1),clamp(0,calc((1 - var(--px)) * 2.5),1))}
+.righe-mov .passi-pista .passo:nth-child(1) :is(.riga-in,.passo-num,.passo-tacche){--pe:1}
+.righe-mov .passi-pista .passo:last-child :is(.riga-in,.passo-num,.passo-tacche){--px:0}
+.righe-mov .passi-pista .passo .cnt-s{transform:translateY(calc(var(--k,0) * -1em))}
+/* S4 (25/11): sugli apparecchi a tocco nessuna sfocatura animata su elementi grandi (entrate, passi, uscita di pagina): solo opacita'
+   e posizione */
+@media (hover:none),(pointer:coarse){
+  .entra,.entra.entra-sola,.passi-pista .passo,.registro-provalo .registro-riga{filter:none!important}
+  html.uscita body{filter:none}
+  @keyframes v32-esce{to{opacity:0}}
+  @keyframes v32-entra{from{opacity:0}}
+}

@@ -376,6 +376,18 @@
               { k: 1.36, testo: ANELLO_P(5), px: 10, v: 0.04, a: 0.35 }
           ];
           const GUIDE = [1.16, 1.46, 1.82, 2.28, 2.9, 3.7];
+          // S4 (25/11): sugli apparecchi a tocco ogni tela al massimo 2,0 milioni di pixel al telefono e 3,0 a iPad (larghezza x altezza x
+          // densita'^2); con il modo leggero deciso durante la visita (fotogrammi lenti nei primi 3 s) densita' 1
+          let leggeroVisita = false;
+          const misuraLeggero = { fine: 0, s: 0, n: 0 };
+          const tettoDpr = (w, h) => {
+              if (leggeroVisita)
+                  return 1;
+              if (!(win.matchMedia && win.matchMedia('(hover: none), (pointer: coarse)').matches))
+                  return 99;
+              const tetto = Math.min(win.innerWidth, win.innerHeight) < 600 ? 2.0e6 : 3.0e6;
+              return Math.max(1, Math.sqrt(tetto / Math.max(1, w * h)));
+          };
           const creaCore = (tela, cfg) => {
               const ctx = tela && tela.getContext ? tela.getContext('2d') : null;
               const cur = P.map((q) => ({ x: q.p[0], y: q.p[1], z: q.p[2], al: 1, ar: 0, ci: 0 }));
@@ -400,7 +412,7 @@
                   const h = tela.clientHeight;
                   if (!w || !h)
                       return;
-                  dpr = Math.min(win.devicePixelRatio || 1, cfg.dprMax || 2);
+                  dpr = Math.min(win.devicePixelRatio || 1, cfg.dprMax || 2, tettoDpr(w, h));
                   W = tela.width = Math.round(w * dpr);
                   H = tela.height = Math.round(h * dpr);
                   escluseT = -1e9;
@@ -541,6 +553,15 @@
                       const a0 = alfa * an.a * (1 - via) * multi;
                       if (a0 < 0.01)
                           continue;
+                      // S2 (25/11): ogni anello di testo tutto dentro il riquadro visibile (raggio + altezza del testo + 8 px entro il bordo
+                      // piu' vicino); un anello che non ci sta non si disegna, cosi' nessuna parola resta tagliata dal bordo
+                      if (cfg.anelliDentro) {
+                          const bx = visibile || [0, 0, W, H];
+                          const spazio = Math.min(cx - bx[0], bx[2] - cx, cy - bx[1], bx[3] - cy);
+                          if (rad + fs + 8 * dpr > spazio)
+                              continue;
+                          (win.__anelli = win.__anelli || {})[j] = { rad: rad / dpr, fs: fs / dpr, spazio: spazio / dpr, t: Math.round(win.performance.now()) };
+                      }
                       const testo = j === 0 && testoStato && jv > 0.5 ? testoStato : an.testo;
                       ctx.font = '500 ' + fs.toFixed(1) + 'px ' + fm();
                       fontStretta(ctx);
@@ -2209,7 +2230,7 @@
           const cores = {};
           qq('[data-core]').forEach((c) => {
               const tipo = c.getAttribute('data-core');
-              cores[tipo] = creaCore(c, { anelli: tipo === 'metodo' ? ANELLI_PICCOLI : tipo === 'apertura' ? ANELLI_GRANDI : [], ang0: tipo === 'finale' ? 2.2 : 0.7, dprMax: tipo === 'metodo' ? 2 : 1.5 });
+              cores[tipo] = creaCore(c, { anelliDentro: tipo === 'apertura', anelli: tipo === 'metodo' ? ANELLI_PICCOLI : tipo === 'apertura' ? ANELLI_GRANDI : [], ang0: tipo === 'finale' ? 2.2 : 0.7, dprMax: tipo === 'metodo' ? 2 : 1.5 });
           });
           const campi = qq('[data-campo]').map(creaCampo);
           const cuciture = qq('[data-cucitura]').map((c) => creaCucitura(c, c.getAttribute('data-cucitura')));
@@ -3193,6 +3214,19 @@
                       fine = cb || null;
                       fissa();
                   },
+                  // S1 (25/11): uscita senza animazione (al fotogramma dopo il tuffo e' finito)
+                  subito(cb) {
+                      if (!attivo()) {
+                          if (cb)
+                              cb();
+                          return;
+                      }
+                      attendiFino = 0;
+                      verso = -1;
+                      fine = cb || null;
+                      p = Math.min(p, 0.0001);
+                      fissa();
+                  },
                   attesa() {
                       const resto = Math.max(0, attendiFino - ora());
                       return Math.round(resto + ((1 - p) * (modo === 'camera' ? T_IN : T_FADE) + (modo === 'camera' ? 60 : 130)) * lento());
@@ -3881,7 +3915,7 @@
                       if (D.stato && modoCorr === 'racconto')
                           D.stato.textContent = NOME + ' · ' + ((on ? PR.pausa : STATI.parla) || '');
                   },
-                  chiudi() {
+                  chiudi(subito) {
                       if (!aperta)
                           return;
                       aperta = false;
@@ -3901,11 +3935,17 @@
                       } };
                       if (strato()) {
                           esci();
-                          tuffo.esci(fine);
+                          if (subito) {
+                              tuffo.subito(fine);     // S1: senza animazione, e la scena chiusa subito (non al fotogramma del tuffo)
+                              fine();
+                          }
+                          else
+                              tuffo.esci(fine);
                       }
                       else
                           fine();
-                      suono.evento('chiusura');
+                      if (!subito)
+                          suono.evento('chiusura');
                   },
                   passo(now) { posaStrato(now); },
                   registra(id, el, dati) { S[id] = dati; storie[id] = el; if (D.storie && !el.parentNode)
@@ -4789,9 +4829,21 @@
           };
           // M5 (mattino 25/11): «Torna al Neural Core» ed Esc chiudono sempre, in qualunque momento: fermano voce e testo e riportano
           // al campo della domanda («Testo intero» resta solo nel menù)
-          const chiudiRisposta = () => {
+          // S1 (25/11): chiudiRisposta(true) = uscita subito (sezione fuori schermo, voce del menu', gesto): niente animazione, niente fuoco
+          const chiudiRisposta = (subito) => {
               const aperta = !!((scena && scena.aperta) || clip || statoC !== 'pronta');
               genV++;
+              if (subito === true && scena && scena.aperta) {     // S1: prima di tutto la scena, senza animazione
+                  scena.chiudi(true);
+                  chiusaFino = 0;
+              }
+              if (subito === true && attesaViva) {      // S1: la risposta dal vivo lasciata a meta' non deve piu' parlare (fino alla prossima domanda)
+                  const sez = doc.querySelector('section.vera');
+                  if (sez && win.VeraVoce && win.VeraVoce.zittisci)
+                      win.VeraVoce.zittisci(sez, true);
+              }
+              attesaViva = null;
+              rispostaViva = null;
               try {
                   if (clip && clip.pausa)
                       riprendiClip();
@@ -4805,6 +4857,7 @@
               clip = null;
               try {
                   fermaVoceServizio();
+                  trattieniVoce(false);      // giro completo: si rilascia la coda solo dopo aver fermato il turno (niente file gia' tolti da caricare)
               }
               catch (x) { }
               try {
@@ -4823,13 +4876,15 @@
               }
               inCoda++;                 // U3: un'apertura in coda viene annullata dalla chiusura
               if (scena && scena.aperta) {
-                  scena.chiudi(false);
-                  chiusaFino = win.performance.now() + TEMPI_RC.tuffoUscita * (root.__tuffoScala || 1);
+                  scena.chiudi(subito === true);
+                  chiusaFino = subito === true ? 0 : win.performance.now() + TEMPI_RC.tuffoUscita * (root.__tuffoScala || 1);
               }
               const rcEl = q1('[data-racconto]');
               if (rcEl)
                   rcEl.classList.remove('in-pausa', 'intero');
-              if (inputCore && !alTocco()) {     // N2 (25/11): al tocco il fuoco non torna sul campo (la tastiera non si apre e la pagina restava ferma)
+              if (subito === true && doc.activeElement === inputCore)
+                  inputCore.blur();
+              if (inputCore && !alTocco() && subito !== true) {     // N2 (25/11): al tocco il fuoco non torna sul campo (la tastiera non si apre e la pagina restava ferma)
                   try {
                       inputCore.focus({ preventScroll: true });
                   }
@@ -4837,6 +4892,30 @@
               }
               return aperta;
           };
+          // S1 (25/11): si esce subito dal Neural Core che risponde quando la sezione esce dallo schermo (meno del 25% visibile), con una
+          // voce del menu', con il tasto di chiusura o con un gesto di scorrimento che non scorre niente dentro la risposta
+          const rispostaAttiva = () => !!((scena && scena.aperta) || clip || statoC !== 'pronta');
+          root.__s1 = () => ({ aperta: !!(scena && scena.aperta), clip: !!clip, stato: statoC, tuffo: tuffo ? { p: tuffo.p, attivo: tuffo.attivo } : null });
+          const sezCoreS1 = doc.getElementById('core');
+          ascolta(doc, 'click', (e) => { const a = e.target && e.target.closest ? e.target.closest('.nav-guscio a, [data-vai], [data-va]') : null;
+              if (a && rispostaAttiva())
+                  chiudiRisposta(true); }, { capture: true });
+          let codaS1 = false;
+          const fuoriCore = () => { codaS1 = false; if (!sezCoreS1 || !rispostaAttiva())
+              return; const r = sezCoreS1.getBoundingClientRect(), H = win.innerHeight;
+              if (Math.max(0, Math.min(r.bottom, H) - Math.max(r.top, 0)) / H < 0.25)
+                  chiudiRisposta(true); };
+          ascolta(win, 'scroll', () => { if (!codaS1) {
+              codaS1 = true;
+              win.requestAnimationFrame(fuoriCore);
+          } }, { passive: true });
+          const scorreDentro = (t) => { for (let n = t; n && n !== doc.body && n.nodeType === 1; n = n.parentElement) {
+              const o = win.getComputedStyle(n).overflowY;
+              if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight + 2)
+                  return true;
+          } return false; };
+          ['wheel', 'touchmove'].forEach((ev) => ascolta(win, ev, (e) => { if (scena && scena.aperta && !scorreDentro(e.target))
+              chiudiRisposta(true); }, { passive: true }));
           ascolta(root, 'keydown', (e) => { if (e.key === 'Escape' && !elencoAperto() && chiudiRisposta())
               e.preventDefault(); });
           // U4 e K1-K7 (25/11; decisione del gruppo del 25/11, 09:00): la domanda a voce con il riconoscimento vocale del browser. Il
@@ -5485,7 +5564,7 @@
               }
               const scC = tgt.closest('[data-sc-chiudi]');
               if (scC) {
-                  chiudiRisposta();      // M5: chiude sempre
+                  chiudiRisposta(true);      // M5: chiude sempre; S1: subito, senza animazione e senza fuoco sul campo
                   return;
               }
               const scorri = tgt.closest('[data-sugg-scorri]');
@@ -5975,6 +6054,21 @@
           let ultimoFilo = 0;
           let ultimoFermo = 0;
           let qA = 0;
+          let stBaseV = 60, stBaseT = -1e9;
+          const stBase = () => {          // S2 (25/11): la cima della fascia (in % dello schermo) sotto il secondo tasto dell'apertura, piu' 14 px
+              const t = win.performance.now();
+              if (t - stBaseT < 500)
+                  return stBaseV;
+              stBaseT = t;
+              const tasti = apertura ? apertura.querySelectorAll('.tasto') : [];
+              const ul = tasti.length ? tasti[tasti.length - 1].getBoundingClientRect() : null;
+              const r0 = fissoA ? fissoA.getBoundingClientRect() : null;      // il livello fisso dell'apertura, non la sezione che scorre
+              if (ul && r0 && ul.height) {
+                  const giu = ul.bottom - r0.top + 14, H0 = win.innerHeight || 1;
+                  stBaseV = Math.min(80, Math.max(60, (giu / H0) * 100));
+              }
+              return stBaseV;
+          };
           const sicuro = (v, d) => (typeof v === 'number' && isFinite(v) ? v : d);      // M1: mai NaN o infinito negli stati
           let qV = 0;
           let qF = 0;
@@ -6379,8 +6473,8 @@
                       const hb = sicuro(lim((q - 0.5) / 0.38), 0);
                       apertura.style.setProperty('--a', a.toFixed(4));
                       apertura.style.setProperty('--z', z.toFixed(4));
-                      if (st)
-                          apertura.style.setProperty('--st', (60 * (1 - a)).toFixed(2) + '%');
+                      if (st)       // S2: a riposo la fascia scura comincia sotto i due tasti dell'apertura (mai sopra il secondo)
+                          apertura.style.setProperty('--st', (stBase() * (1 - a)).toFixed(2) + '%');
                       else
                           apertura.style.setProperty('--sx', (50 * (1 - a)).toFixed(2) + '%');
                       const buco = sicuro(Math.pow(hb, 1.7) * (diag / 2 + 60), 0);
@@ -6768,6 +6862,25 @@
                   }
                   else
                       this._glPulito = false;
+              }
+              // S4 (25/11): sicurezza a tempo: se nei primi 3 s la media dei fotogrammi supera 34 ms, modo leggero per tutta la visita
+              if (!leggeroVisita && misuraLeggero.fine === 0)
+                  misuraLeggero.fine = t + 3000;
+              if (!leggeroVisita && misuraLeggero.fine > 0 && dt > 0) {
+                  if (t < misuraLeggero.fine) {
+                      misuraLeggero.s += dt * 1000;
+                      misuraLeggero.n++;
+                  }
+                  else if (misuraLeggero.n > 10) {
+                      if (misuraLeggero.s / misuraLeggero.n > 34) {
+                          leggeroVisita = true;
+                          root.classList.add('leggero-visita');
+                          Object.keys(cores).forEach((k) => cores[k].dimensiona());
+                          if (nucleo)
+                              nucleo.qualita = 0;
+                      }
+                      misuraLeggero.fine = -1;
+                  }
               }
               if (alone)
                   alone.passo(dt, t);
