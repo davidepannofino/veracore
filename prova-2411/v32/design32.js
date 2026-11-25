@@ -6151,9 +6151,7 @@
           let distSatF = 1.45, satAngF = null;
           const SAT_TEL = [-2.2, -0.94, 2.2, 0.94];      // METODO, DATI, EVIDENZE, VERIFICATORE (stesso ordine di SATELLITI)
           // N2 (25/11): la tenuta vale solo con la tastiera davvero aperta (visualViewport ridotto, o finestra accorciata di oltre 100 px)
-          // K1 (25/11): al tocco la tenuta vale finche' il campo ha il fuoco, com'era prima di N2 (su iOS con la tastiera aperta
-          // offsetTop cresce e il conto qui sotto non superava 100: la pagina finiva nel footer); col mouse resta il conto di N2
-          const tastAperta = () => { if (!tast.on) return false; if (alTocco()) { tast.eraAperta = true; return true; } const vv = win.visualViewport;
+          const tastAperta = () => { if (!tast.on) return false; const vv = win.visualViewport;
               const kb = vv ? win.innerHeight - vv.height - vv.offsetTop : 0;
               const si = kb > 100 || (tast.h0 - win.innerHeight) > 100; if (si) tast.eraAperta = true; return si; };
           let qR = 0;
