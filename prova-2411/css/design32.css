@@ -245,7 +245,7 @@ body{margin:0;background:#F2F1EC}
 .barra-core .voce{width:48px;padding:0;justify-content:center}
 .barra-core .voce .eti{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .barra-core .voce svg .onde{opacity:.28;transition:opacity .2s var(--ease-standard)}
-/* il campo del Neural Core (25/11, parte 1, punto 3): l'esempio come segnaposto che si tocca, l'elenco di tutte le domande */
+/* il campo del Neural Core (24/11, parte 1, punto 3): l'esempio come segnaposto che si tocca, l'elenco di tutte le domande */
 .campo-core{position:relative;flex:1;min-width:0;display:flex}
 .campo-core input{flex:1}
 .esempio{position:absolute;left:1px;top:1px;bottom:1px;max-width:calc(100% - 2px);display:flex;align-items:center;gap:.5ch;padding:0 13px;border-radius:7px;font:400 14px/1.2 var(--font-main);color:var(--nebbia);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
@@ -548,7 +548,7 @@ body{margin:0;background:#F2F1EC}
   --space-1:.25rem;--space-2:.5rem;--space-3:1rem;--space-4:1.5rem;--space-5:2rem;--space-6:3rem;
   --dur-ui:160ms;--dur-word:500ms;--dur-question:600ms;--dur-rule:600ms;--dur-card:800ms;--dur-foot:800ms;--dur-reduced:300ms;
   --ease-out:cubic-bezier(.22,1,.36,1);--ease-inout:cubic-bezier(.65,0,.35,1);
-  --carta-2:#E7E6E0;--carta-3:#DBDAD3;--etichetta:#5F6166;--linea:#D3D2CB;--tratteggio:rgba(20,21,23,.32);--stanza:#0E1012;--stanza-2:#16191C;--stanza-3:#23272B;--brina:#ECEDE8;--nebbia:#8E9297;--filo:rgba(236,237,232,.14);--vh:900px;--vh:clamp(560px,100svh,1200px);--ease-standard:cubic-bezier(.4,0,.2,1);--ease-roll:cubic-bezier(.16,.84,.24,1);
+  --carta-2:#E7E6E0;--carta-3:#DBDAD3;--etichetta:#5F6166;--linea:#D3D2CB;--tratteggio:rgba(20,21,23,.32);--stanza:#0E1012;--stanza-2:#16191C;--stanza-3:#23272B;--brina:#ECEDE8;--nebbia:#8E9297;--filo:rgba(236,237,232,.14);--vh:900px;--vh:clamp(560px,100svh,2400px);--ease-standard:cubic-bezier(.4,0,.2,1);--ease-roll:cubic-bezier(.16,.84,.24,1);
   --font-main:"Geist Mono",ui-monospace,monospace;
   --fs-1:clamp(1.625rem,3vw,2.75rem);--fs-2:clamp(1.125rem,1.8vw,1.5rem);--fs-3:.6875rem;
 }
@@ -737,15 +737,15 @@ body.v32 { padding-bottom: 2rem; }
   .pagina .tabella-terzo td::before { content: attr(data-eti); display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
 }
 /* 24/11: «Analizza i tuoi dati» e la voce (solo audio gia' preparato) sotto i comandi del Neural Core */
-/* 25/11: il riquadro «Chiedi a …» di prima e' un pulsante verso il Neural Core; il widget resta solo come motore, nascosto */
+/* 24/11: il riquadro «Chiedi a …» di prima e' un pulsante verso il Neural Core; il widget resta solo come motore, nascosto */
 .pagina section.vera[data-solo-motore] > :not(.vera-pulsante) { display: none !important; }
 .pagina section.vera[data-solo-motore] .vera-pulsante { margin: 0; display: flex; justify-content: center; }
-/* A5 (25/11): l'etichetta dell'addendum ben visibile, subito sotto il titolo di «E con due campioni?» */
+/* A5 (24/11): l'etichetta dell'addendum ben visibile, subito sotto il titolo di «E con due campioni?» */
 .pagina .due-campioni .etichetta-addendum.in-vista { display: block; margin: 0 0 28px; max-width: 70ch; padding: 12px 16px; border: 1px solid var(--ink);
   border-left: 4px solid var(--accent); font: 500 14px/1.5 var(--font-main); text-transform: none; letter-spacing: 0; color: var(--ink); }
-/* B3 (25/11): nessun backdrop-filter su elementi fissi (pesa a ogni fotogramma di scorrimento) */
+/* B3 (24/11): nessun backdrop-filter su elementi fissi (pesa a ogni fotogramma di scorrimento) */
 body.v32 #barra-fissa { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(14, 16, 18, .96); }
-/* B4 (25/11): nessuna stanza nello stile di prima. Il widget di prima resta solo come motore del servizio dal vivo, nascosto del tutto */
+/* B4 (24/11): nessuna stanza nello stile di prima. Il widget di prima resta solo come motore del servizio dal vivo, nascosto del tutto */
 .pagina > main > section.vera[data-solo-motore] { display: none !important; }
 /* «Provalo sui tuoi dati»: un capitolo di carta come gli altri, occhiello, titolo, un paragrafo, il pulsante e la guida in una riga */
 .pagina .provalo-32 { background: var(--paper); color: var(--ink); padding: calc(var(--vh) * .22) 0 calc(var(--vh) * .26); border-top: 1px dashed var(--tratteggio); }
@@ -765,7 +765,7 @@ body.v32 #barra-fissa { -webkit-backdrop-filter: none; backdrop-filter: none; ba
 .finale-testo .tasti .tasto.scuro { background: transparent; color: var(--paper); border: 1px solid rgba(236, 237, 232, .4); }
 .finale-testo { pointer-events: none; }
 .finale-testo :is(a, button) { pointer-events: auto; }
-/* B7 (25/11): «Fonti», un piccolo comando chiuso per capitolo; aperto: nome leggibile, file, riga, impronta (e i pannelli del capitolo) */
+/* B7 (24/11): «Fonti», un piccolo comando chiuso per capitolo; aperto: nome leggibile, file, riga, impronta (e i pannelli del capitolo) */
 .pagina .fonti-32 { margin: 0; font: 400 11px/1.55 var(--font-main); letter-spacing: .03em; color: var(--etichetta); }
 .pagina .fonti-32 > summary { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; text-transform: uppercase;
   letter-spacing: .06em; padding: 6px 0; color: inherit; }
@@ -785,12 +785,12 @@ body.v32 #barra-fissa { -webkit-backdrop-filter: none; backdrop-filter: none; ba
 .pagina .registro-coda .fonti-32 { text-transform: none; }
 .pagina .due-campioni .fonti-32 { margin-top: 18px; }
 .pagina .ris-numeri .fonti-32 { margin-top: 10px; }
-/* B8 (25/11): la frase del problema che parla della riga accesa del registro; le altre restano leggibili (nessuna trasparenza) */
+/* B8 (24/11): la frase del problema che parla della riga accesa del registro; le altre restano leggibili (nessuna trasparenza) */
 .pagina .problema .frase-passo { transition: color .25s var(--ease-standard), text-decoration-color .25s var(--ease-standard);
   text-decoration: underline 2px transparent; text-underline-offset: 4px; text-decoration-skip-ink: none; }
 .pagina .problema .frase-passo.accesa { color: var(--ink); text-decoration-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .pagina .problema .frase-passo { transition: none; } }
-/* B10 (25/11): il tasto del suono dell'ambiente nella barra, come nel prototipo 32 (barre, pannello del volume, «Riprendi») */
+/* B10 (24/11): il tasto del suono dell'ambiente nella barra, come nel prototipo 32 (barre, pannello del volume, «Riprendi») */
 .nav-suono-guscio{position:relative;display:flex}
 .nav-suono.riprendi .eti::after{content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--accent);vertical-align:2px}
 .barre{display:inline-flex;align-items:flex-end;gap:2px;height:11px}
@@ -806,7 +806,7 @@ body.v32 #barra-fissa { -webkit-backdrop-filter: none; backdrop-filter: none; ba
 .suono-vol input{flex:1;min-width:0;height:24px;accent-color:var(--accent);cursor:pointer}
 .suono-nota{display:block;margin-top:9px;font:400 10px/1.5 var(--font-main);letter-spacing:.02em;color:var(--nebbia)}
 @media (max-width:899px){.suono-pannello{right:-6px}}
-/* B11 (25/11): il primo fotogramma fermo della sfera nel pannello scuro, finche' il canvas non disegna. Stessa grandezza e stesso
+/* B11 (24/11): il primo fotogramma fermo della sfera nel pannello scuro, finche' il canvas non disegna. Stessa grandezza e stesso
    posto del primo disegno (design32.js: R0 = 0,2 x min(meta' larghezza, altezza) al centro (75%, 53%); sotto i 900 px
    R0 = 0,19 x il lato corto al centro (50%, 80%)); sfuma quando la sfera vera c'e'. Fermo anche con il movimento ridotto. */
 .sfera-ferma{position:absolute;inset:0;pointer-events:none;--r:calc(min(50vw,100svh) * .2);--cx:75%;--cy:53%;transition:opacity .45s var(--ease-standard)}
@@ -817,3 +817,30 @@ body.v32 #barra-fissa { -webkit-backdrop-filter: none; backdrop-filter: none; ba
 .sf-centro{width:8px;height:8px;background:var(--accent);box-shadow:0 0 14px 2px color-mix(in srgb,var(--accent) 45%,transparent)}
 .sfera-disegnata .sfera-ferma{opacity:0}
 @media (max-width:899px){.sfera-ferma{--r:calc(min(100vw,100svh) * .19);--cx:50%;--cy:80%}}
+
+/* N1.3 (notte 25/11): l'esempio e' testo nel campo e non si tocca: il tocco arriva al campo (tastiera); sparisce quando si scrive o con
+   il campo attivo. L'elenco «Domande proposte» ha i temi */
+.esempio{pointer-events:none}
+.campo-core:focus-within .esempio{opacity:0}
+.esempio .esempio-testo{text-decoration:none}
+.elenco-gruppo{list-style:none}
+.elenco-gruppo ul{list-style:none;margin:0;padding:0}
+.elenco-tema{margin:10px 0 4px;padding:0 12px;font:500 10.5px/1.4 var(--font-main);text-transform:uppercase;letter-spacing:.06em;color:var(--nebbia)}
+/* N1.4 (notte 25/11): il widget di prima, solo motore del servizio, non si vede mai */
+#chiedi[hidden],.pagina .chiedi[hidden]{display:none!important}
+/* N1.5 (notte 25/11): la riga «il suono non è partito» nel pannello del suono, ben leggibile */
+.suono-nonpartito{color:var(--brina);border-left:2px solid var(--accent);padding-left:8px}
+.suono-nonpartito[hidden]{display:none}
+/* N1.6 (notte 25/11): la barra larga quanto il suo contenuto (almeno quella del prototipo, mai oltre lo schermo): con «Provalo» e
+   «Suono» le voci non escono piu' dalla barra a 1024, 1180, 1440 */
+@media (min-width:900px){.nav{width:max-content;min-width:min(600px,100%);max-width:100%}}
+.nav-riga{min-width:0}
+/* N1.7 (notte 25/11): la riga «La voce non è partita: tocca per riprovare», sopra la risposta, ben visibile */
+.rc-voce-riprova{display:block;margin:0 auto 10px;padding:10px 14px;min-height:44px;border:1px solid var(--accent);border-radius:8px;background:transparent;color:var(--ink);font:500 12px/1.3 var(--font-main);text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+.rc-voce-riprova[hidden]{display:none}
+/* N1.10 (notte 25/11): aree toccabili di almeno 44 px (menu, «Fonti», collegamenti del piede, guida), senza cambiare l'aspetto */
+.nav-voce,.nav-logo{position:relative}
+.nav-voce::before,.nav-logo::before{content:"";position:absolute;inset:-7px -2px}
+.pagina .fonti-32>summary{min-height:44px}
+.pagina .piede-lista a{display:inline-flex;align-items:center;min-height:44px}
+.pagina .riga-guida a{display:inline-flex;align-items:center;min-height:44px}

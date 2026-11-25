@@ -20,7 +20,7 @@
   // vera.js chiede la voce al Worker solo se serve: dopo un gesto e con la voce non zittita (nessun carattere sprecato)
   window.VeraVoce = { versione: 1, attesa_audio_ms: ATTESA_AUDIO_MS, solo_testo: SOLO_TESTO,
     vuole: (radice) => Boolean(radice.veraVoce && radice.veraVoce.sbloccata && !radice.veraVoce.zittita),
-    // 25/11 (design 32, A3): la pagina che ha il suo unico tasto della voce governa questo modulo. sblocca() va chiamata SOLO dentro
+    // 24/11 (design 32, A3): la pagina che ha il suo unico tasto della voce governa questo modulo. sblocca() va chiamata SOLO dentro
     // un gesto vero della persona (clic o Invio sul campo della pagina); zittisci() segue il tasto; ferma() tronca la voce in corso
     // (per esempio prima di un audio preparato: mai due voci insieme)
     sblocca: (radice) => { if (radice && radice.veraVoceComandi) radice.veraVoceComandi.sblocca(); },
@@ -39,13 +39,24 @@
     let pendenti = [];   // righe {"voce"} arrivate prima del testo a schermo (si suonano solo dopo)
 
     const emetti = (tipo, dati = {}) => radice.dispatchEvent(new CustomEvent("vera-voce", { detail: { tipo, ...dati }, bubbles: true }));
-    const audioCtx = () => ctx || (ctx = new (window.AudioContext || window.webkitAudioContext)());
+    // N1.7 (notte 25/11): la voce esce da un solo elemento audio, quello della pagina (audio[data-voce-vera], lo stesso della voce
+    // preparata) o, se la pagina non lo ha, uno suo; si sblocca nel gesto con un istante di silenzio (iOS)
+    const elemento = () => document.querySelector("audio[data-voce-vera]") || ctx || (ctx = new Audio());
+    const SILENZIO = (() => { const n = 800, b = new Uint8Array(44 + n * 2), v = new DataView(b.buffer), w = (o, t) => { for (let i = 0; i < t.length; i++) b[o + i] = t.charCodeAt(i); };
+      w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, 16000, true); v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
+      let x = ""; for (let i = 0; i < b.length; i++) x += String.fromCharCode(b[i]); return "data:audio/wav;base64," + btoa(x); })();
 
-    // ---- il gesto: solo dentro un clic (o l'invio del modulo) si apre e si riprende l'audio
+    // ---- il gesto: solo dentro un clic (o l'invio del modulo) si sblocca l'elemento audio
     function sblocca() {
       try {
-        const c = audioCtx();
-        if (c.state === "suspended") c.resume();
+        const el = elemento();
+        if (!el.dataset.sbloccato) {
+          el.src = SILENZIO;
+          const pr = el.play();
+          el.dataset.sbloccato = "1";
+          if (pr && pr.then) pr.then(() => { if (el.src === SILENZIO) el.pause(); }, () => { delete el.dataset.sbloccato; });
+        }
         st.sbloccata = true;
       } catch { st.sbloccata = false; }
     }
@@ -95,7 +106,9 @@
     }
     function ferma(t, motivo) {
       clearTimeout(t.timer);
-      for (const s of t.fonti) { try { s.stop(); } catch { /* gia' ferma */ } }
+      if (t.suona) { try { elemento().pause(); } catch { /* gia' ferma */ } }
+      t.suona = false;
+      for (const u of t.fonti) { try { URL.revokeObjectURL(u); } catch { /* gia' tolto */ } }
       t.fonti = [];
       if (!t.chiuso) { t.chiuso = true; if (t.primo_ms !== null) emetti("voce_fine", { turno: t.n, interrotta: motivo !== "fine" }); }
     }
@@ -147,52 +160,57 @@
       const v = x.voce;
       if (!v) return;
       if (v.stato !== "pronta" || !v.audio_base64) return rinuncia(t, v.motivo || "non_disponibile");
-      decodifica(v).then((buf) => {
-        if (t.giu || t.chiuso) return;
-        t.audio.set(v.indice, { buf, parole: v.parole || [] });
-        if (!t.ordine.includes(v.indice)) t.ordine.push(v.indice);
-        t.ordine.sort((a, b) => a - b);
-        avanti(t);
-      }).catch(() => rinuncia(t, "audio_non_leggibile"));
+      let url;
+      try { url = indirizzo(v); } catch { return rinuncia(t, "audio_non_leggibile"); }
+      t.fonti.push(url);
+      t.audio.set(v.indice, { url, parole: v.parole || [] });
+      if (!t.ordine.includes(v.indice)) t.ordine.push(v.indice);
+      t.ordine.sort((a, b) => a - b);
+      avanti(t);
     }
-    function decodifica(v) {
+    function indirizzo(v) {       // l'audio della frase come file in memoria (wav o mp3, dal formato che dice il servizio)
       const b = Uint8Array.from(atob(v.audio_base64), (c) => c.charCodeAt(0));
-      return audioCtx().decodeAudioData(b.buffer);
+      const tipo = String(v.formato || "").startsWith("wav") ? "audio/wav" : "audio/mpeg";
+      return URL.createObjectURL(new Blob([b], { type: tipo }));
     }
     function avanti(t) {
       if (t.suona || t.giu || t.chiuso) return;
       const indice = t.ordine[t.prossimo];
       if (indice === undefined || !t.audio.has(indice)) return;
-      const { buf, parole } = t.audio.get(indice);
-      const c = audioCtx();
-      const src = c.createBufferSource();
-      src.buffer = buf;
-      src.connect(c.destination);
-      t.fonti.push(src);
+      const { url, parole } = t.audio.get(indice);
+      const el = elemento();
       t.suona = true;
-      const inizio = c.currentTime;
-      src.start(inizio);
-      if (t.primo_ms === null) {
-        t.primo_ms = performance.now() - t.t_testo;
-        clearTimeout(t.timer);
-        st.misure.push({ turno: t.n, primo_audio_ms: t.primo_ms, fallita: null });
-      }
-      emetti("voce_inizio", { turno: t.n, indice, durata_s: buf.duration });
-      let k = 0;
+      el.src = url;
+      let k = 0, partita = false;
       const segui = () => {
         if (t.chiuso || !t.suona) return;
-        const pos = c.currentTime - inizio;
+        const pos = el.currentTime || 0;
         while (k < parole.length && (parole[k].inizio_s || 0) <= pos) { emetti("voce_parola", { turno: t.n, indice, parola: parole[k].parola, n: k }); k++; }
         if (k < parole.length) requestAnimationFrame(segui);
       };
-      requestAnimationFrame(segui);
-      src.onended = () => {
+      const fine = () => {
+        el.removeEventListener("ended", fine);
+        if (t.chiuso) return;
         t.suona = false;
-        t.fonti = t.fonti.filter((s) => s !== src);
         t.prossimo++;
         if (t.prossimo >= t.ordine.length && !t.giu) ferma(t, "fine");
         else avanti(t);
       };
+      el.addEventListener("ended", fine);
+      const pr = el.play();
+      const parti = () => {
+        if (partita || t.chiuso) return;
+        partita = true;
+        if (t.primo_ms === null) {
+          t.primo_ms = performance.now() - t.t_testo;
+          clearTimeout(t.timer);
+          st.misure.push({ turno: t.n, primo_audio_ms: t.primo_ms, fallita: null });
+        }
+        emetti("voce_inizio", { turno: t.n, indice, durata_s: Number.isFinite(el.duration) ? el.duration : null });
+        requestAnimationFrame(segui);
+      };
+      if (pr && pr.then) pr.then(parti, () => { el.removeEventListener("ended", fine); t.suona = false; rinuncia(t, "riproduzione_bloccata"); });
+      else parti();
     }
   }
 

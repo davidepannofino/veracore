@@ -33,7 +33,9 @@ export function registrato(sfera) {
 function riga(etichetta, tuo, reg) {
   const tr = document.createElement("tr");
   tr.className = tuo === reg ? "uguale" : "diversa";
-  for (const [tag, testo] of [["th", etichetta], ["td", String(tuo)], ["td", String(reg)]]) {
+  // N1.10 (notte 25/11): a schermo i decimali con la virgola e al massimo 3 cifre; il confronto resta sui valori interi del file
+  const mostra = (x) => (typeof x === "number" && Number.isFinite(x) && !Number.isInteger(x) ? x.toLocaleString("it-IT", { maximumFractionDigits: 3 }) : String(x));
+  for (const [tag, testo] of [["th", etichetta], ["td", mostra(tuo)], ["td", mostra(reg)]]) {
     const c = document.createElement(tag); c.textContent = testo; if (tag === "th") c.scope = "row"; tr.append(c);
   }
   return tr;
@@ -46,7 +48,7 @@ async function rifai() {
   const corpo = $("rifallo-confronto").querySelector("tbody");
   corpo.replaceChildren();
   try {
-    const [sfera, regola] = await Promise.all(["../dati/sfera.json", "rifallo/regola.json"].map(async (u) => {
+    const [sfera, regola] = await Promise.all(["../dati/sfera.json?v=e9fd6de6", "rifallo/regola.json?v=73a55e6a"].map(async (u) => {
       const r = await fetch(u, { cache: "no-store" });
       if (!r.ok) throw new Error(u + ": " + r.status);
       return r.json();

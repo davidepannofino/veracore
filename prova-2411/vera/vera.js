@@ -1,7 +1,7 @@
 // VERA viva: widget «Chiedi a VERA» per il sito. Nessuna libreria, nessuna risorsa esterna.
 //
 // Uso:
-//   <section class="vera" data-api="https://vera-viva.<account>.workers.dev" data-catalogo="catalogo.json"
+//   <section class="vera" data-api="https://vera-viva.<account>.workers.dev" data-catalogo="catalogo.json?v=a353f57c"
 //            data-repo="https://github.com/<proprietario>/<repository>/blob/main/"></section>
 //   <link rel="stylesheet" href="vera.css"> <script src="vera.js" defer></script>
 //
@@ -438,7 +438,7 @@
     }
 
     (async () => {
-      try { catalogo = await (await fetch(radice.dataset.catalogo || "catalogo.json")).json(); } catch { /* resta vuoto */ }
+      try { catalogo = await (await fetch(radice.dataset.catalogo || "catalogo.json?v=a353f57c")).json(); } catch { /* resta vuoto */ }
       const nome = catalogo.nome_assistente || "";
       titolo.textContent = testiNuovi.titolo || `Chiedi a ${nome}`;
       chiE.textContent = testiNuovi.chi_titolo || `Chi è ${nome}?`;

@@ -1,4 +1,4 @@
-/* un solo carattere anche nelle pagine secondarie (25/11, parte 1, punto 9): solo stile, con il design 32 acceso;
+/* un solo carattere anche nelle pagine secondarie (24/11, parte 1, punto 9): solo stile, con il design 32 acceso;
    il codice del calcolo e il Rapporto che produce non cambiano */
 @font-face{font-family:"Geist Mono";font-style:normal;font-display:swap;font-weight:100 900;src:url("../fornitori/font/geist-mono-latin-wght-normal.woff2") format("woff2")}
 :root{--titolo:"Geist Mono",ui-monospace,monospace;--testo:"Geist Mono",ui-monospace,monospace;--mono:"Geist Mono",ui-monospace,monospace}

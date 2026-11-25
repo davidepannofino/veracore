@@ -18,6 +18,11 @@
   const SAT_ETI = PC.satelliti || {};
   const ANELLO = (k) => String((PC.anello || {})[k] || "") + " · ";
   let AUDIO = {};
+  // N1.7 (notte 25/11): un istante di silenzio (WAV di 0,05 s fatto qui), per sbloccare l'elemento audio dentro un gesto (iOS)
+  const SILENZIO = (() => { const n = 800, b = new Uint8Array(44 + n * 2), v = new DataView(b.buffer), w = (o, t) => { for (let i = 0; i < t.length; i++) b[o + i] = t.charCodeAt(i); };
+      w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, 16000, true); v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+      let s = ''; for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return 'data:audio/wav;base64,' + btoa(s); })();
   const ANELLO_P = (i) => String((PAROLE.anelli || [])[i] || "") + " · ";
   // i tempi (ms) della risposta e del passaggio dalla sfera alla risposta, tutti qui
   const TEMPI_RC = {
@@ -142,7 +147,7 @@
               }
               n = n.parentElement;
           }
-          // B2 (25/11): l'altezza usata per --vh e per le misure e' STABILE: cambia solo con la larghezza o l'orientamento (o a richiesta),
+          // B2 (24/11): l'altezza usata per --vh e per le misure e' STABILE: cambia solo con la larghezza o l'orientamento (o a richiesta),
           // non quando su iPhone e iPad la barra del browser compare o sparisce durante lo scorrimento
           const altezzaVera = () => (scorre ? scorre.clientHeight : win.innerHeight);
           const larghezza = () => (scorre ? scorre.clientWidth : win.innerWidth);
@@ -158,10 +163,13 @@
               win.addEventListener('load', finePartenza, { once: true });
           const posizione = () => (scorre ? scorre.scrollTop : (win.scrollY || win.pageYOffset || 0));
           const ridotto = !!(win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
-          let statico = altezza() > 1600;
+          // N1.9 (notte 25/11): la pagina diventa statica solo oltre 2400 px di altezza (prima 1600, dal prototipo: proteggeva le
+          // fotografie della pagina intera, dove la finestra e' alta quanto la pagina). Gli schermi 4K (2160) hanno il movimento
+          const SOGLIA_STATICA = 2400;
+          let statico = altezza() > SOGLIA_STATICA;
           let fermo = ridotto || statico || this.props.movimento === false;
           const stretto = () => larghezza() < 900;
-          root.style.setProperty('--vh', (statico ? 900 : Math.round(lim(altezza(), 560, 1200))) + 'px');
+          root.style.setProperty('--vh', (statico ? 900 : Math.round(lim(altezza(), 560, SOGLIA_STATICA))) + 'px');
           root.classList.add(fermo ? 'modo-fermo' : 'modo-movimento');
           if (statico)
               root.classList.add('modo-statico');
@@ -200,7 +208,7 @@
               }
           }
           const segni = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-          // 25/11, parte 1, punto 8: mentre una scritta si anima, il testo intero resta nel DOM per chi usa un lettore di schermo
+          // 24/11, parte 1, punto 8: mentre una scritta si anima, il testo intero resta nel DOM per chi usa un lettore di schermo
           // (un livello nascosto agli occhi) e le lettere che cambiano sono nascoste ai lettori; a fine animazione torna testo semplice
           const dueLivelli = (el, fine) => {
               el.textContent = '';
@@ -227,7 +235,7 @@
               let f = 0;
               const passi = 12;
               const fotogramma = () => fine.split('').map((c, i) => (/[\s\/·.,:&—§_-]/.test(c) || i < (f / passi) * fine.length ? c : segni[Math.floor(Math.random() * segni.length)])).join('');
-              vis.textContent = fotogramma();      // B11 (25/11): subito, alla stessa lunghezza: la riga non si svuota e il testo non salta
+              vis.textContent = fotogramma();      // B11 (24/11): subito, alla stessa lunghezza: la riga non si svuota e il testo non salta
               const id = ogni(() => {
                   f++;
                   vis.textContent = fotogramma();
@@ -344,7 +352,7 @@
           })();
           const SATELLITI = [{ n: 'METODO', a: -2.53 }, { n: 'DATI', a: -0.61 }, { n: 'EVIDENZE', a: 2.53 }, { n: 'VERIFICATORE', a: 0.61 }];
           const preparaAnello = (a) => {
-              // 25/11, parte 1, punto 7: il giro si chiude a fine testo, cosi' nessuna parola resta tagliata dove il cerchio si chiude
+              // 24/11, parte 1, punto 7: il giro si chiude a fine testo, cosi' nessuna parola resta tagliata dove il cerchio si chiude
               const n0 = Math.max(14, Math.floor((2 * Math.PI * a.k * 210) / (a.px * 0.84)));
               const L = (a.testo || '').length;
               const nn = L ? Math.max(L, Math.round(n0 / L) * L) : n0;
@@ -393,7 +401,7 @@
                   H = tela.height = Math.round(h * dpr);
                   escluseT = -1e9;
               };
-              // le etichette della sezione (FIG, NEURAL CORE...): le parole degli anelli non ci passano mai sopra (25/11, punto 7)
+              // le etichette della sezione (FIG, NEURAL CORE...): le parole degli anelli non ci passano mai sopra (24/11, punto 7)
               let escluse = [];
               let escluseT = -1e9;
               const aggiornaEscluse = (t) => {
@@ -521,7 +529,7 @@
                       fontStretta(ctx);
                       const giro = t * 0.001 * an.v * (j === 0 && jv > 0.5 ? 1.6 : 1);
                       let colA = -1;
-                      // parola per parola (25/11, punto 7): a riposo si vedono solo parole intere; un taglio o un'etichetta
+                      // parola per parola (24/11, punto 7): a riposo si vedono solo parole intere; un taglio o un'etichetta
                       // tolgono la parola tutta; niente lettere che lampeggiano
                       const nT = testo.length;
                       const nUsa = nT ? (Math.floor(an.n / nT) * nT || an.n) : an.n;
@@ -1927,7 +1935,7 @@
               let chh = 0;
               let cols = 0;
               let celle = [];
-              const nuova = () => (Math.random() < 0.22 ? { g: SEGNI[Math.floor(Math.random() * SEGNI.length)], a: 0.008 + Math.random() * 0.014 } : null);   // 25/11: quasi invisibile
+              const nuova = () => (Math.random() < 0.22 ? { g: SEGNI[Math.floor(Math.random() * SEGNI.length)], a: 0.008 + Math.random() * 0.014 } : null);   // 24/11: quasi invisibile
               const figura = tela && tela.getAttribute('data-campo') === 'metodo' ? root.querySelector('[data-core="metodo"]') : null;
               let molt = null;
               const maschera = () => {
@@ -2260,7 +2268,7 @@
                   return;
               rigaAtt = k;
               righe.forEach((r, i) => r.classList.toggle('attiva', i === k));
-              // B8 (25/11): la frase del paragrafo del problema che parla della riga accesa
+              // B8 (24/11): la frase del paragrafo del problema che parla della riga accesa
               frasiPasso.forEach((f) => f.classList.toggle('accesa', k >= 0 && (' ' + f.getAttribute('data-righe') + ' ').indexOf(' ' + k + ' ') >= 0));
               const r = righe[Math.max(0, k)];
               if (!r)
@@ -2379,6 +2387,12 @@
           const tastoVoce = q1('[data-voce-toggle]');
           const voceEti = q1('[data-voce-eti]');
           const voceEl = q1('[data-voce-vera]');
+          // N1.7: la prima volta il tasto della voce dice anche «Attiva la voce»
+          try {
+              if (voceEti && !win.localStorage.getItem('ncb.voce.v1') && (PC.voce || {}).attiva)
+                  voceEti.textContent = PC.voce.attiva;
+          }
+          catch (e) { }
           this._voce = voceEl;
           const modVoce = q1('[data-mod-voce]');
           const modAscolto = q1('[data-mod-ascolto]');
@@ -2505,7 +2519,7 @@
                   }
               };
           };
-          // B10 (25/11): il suono dell'ambiente del prototipo 32, generato dal vivo con Web Audio (oscillatori e rumore filtrato),
+          // B10 (24/11): il suono dell'ambiente del prototipo 32, generato dal vivo con Web Audio (oscillatori e rumore filtrato),
           // nessun file. Spento fino al gesto di chi guarda (il tasto nella barra); si abbassa quando parla la voce dell'assistente.
           const creaSuono = (prendiCtx) => {
               let ctx = null;
@@ -2521,6 +2535,8 @@
               let ultimoPassa = 0;
               let nascosto = false;
               const RE2 = 73.4162;
+              // N1.5 (notte 25/11): i livelli del suono, tarati con la misura sull'uscita (livelli32.mjs)
+              const SUONO_K = 0.029 * 6.6, SUONO_ARIA = 0.16, SUONO_UI = 0.55 * 2.4, SUONO_CLIC = 0.2;
               const hz = (semi) => RE2 * Math.pow(2, semi / 12);
               const ora = () => (ctx ? ctx.currentTime : 0);
               const verso = (p, v, t0, tau) => { try {
@@ -2607,8 +2623,11 @@
                   n.ambR.gain.value = 0.16;
                   n.ambD.connect(n.ambR);
                   n.ambR.connect(n.rev);
-                  const P = [[0, 1.0, -0.28], [7, 0.55, 0.24], [12, 0.42, -0.12], [16, 0.2, 0.33], [19, 0.24, -0.36], [26, 0.11, 0.18], [31, 0.05, -0.05]];
-                  const K = 0.029;
+                  // N1.5 (notte 25/11): l'accordo un'ottava sopra (Re3 … La5) e piu' forte, perche' sugli altoparlanti di telefono e iPad
+                  // si senta: a volume predefinito l'ambiente sta tra -30 e -24 dBFS RMS, con l'energia tra 200 e 1200 Hz almeno pari a
+                  // quella sotto 150 Hz (misura: web/test/js/livelli32.mjs). Prima: Re2 … La4, -42 dBFS, quasi tutto sotto 150 Hz
+                  const P = [[12, 0.45, -0.28], [19, 0.6, 0.24], [24, 0.55, -0.12], [28, 0.34, 0.33], [31, 0.34, -0.36], [38, 0.17, 0.18], [43, 0.09, -0.05]];
+                  const K = SUONO_K;
                   P.forEach((p, i) => {
                       const g = ctx.createGain();
                       g.gain.value = p[1] * K * 0.8;
@@ -2640,7 +2659,7 @@
                   n.ariaF.frequency.value = 520;
                   n.ariaF.Q.value = 0.8;
                   n.ariaG = ctx.createGain();
-                  n.ariaG.gain.value = 0.05;
+                  n.ariaG.gain.value = SUONO_ARIA;
                   n.ariaF.connect(n.ariaG);
                   n.ariaG.connect(n.amb);
                   [7.3, 11.9].forEach((s, i) => {
@@ -2700,7 +2719,7 @@
                   lsrc.start(t, Math.random() * 5);
                   n.rumori.push(lsrc);
                   n.ui = ctx.createGain();
-                  n.ui.gain.value = 0.55;
+                  n.ui.gain.value = SUONO_UI;
                   n.ui.connect(n.master);
                   n.uiR = ctx.createGain();
                   n.uiR.gain.value = 0.22;
@@ -2813,8 +2832,9 @@
                   s.stop(t + 0.03);
               };
               const EV = {
-                  clic: (t) => { tono(hz(60), 'triangle', 0.014, 0.04, t); tono(hz(67), 'sine', 0.01, 0.028, t); tono(hz(72), 'sine', 0.007, 0.018, t); scatto(t, 0.012); },
-                  passa: (t) => { tono(hz(67), 'sine', 0.006, 0.016, t); tono(hz(72), 'sine', 0.005, 0.01, t); },
+                  // N1.5: il clic un'ottava sotto (1,2-2,3 kHz) e piu' forte: picco tra 0,15 e 0,30 (mai oltre 0,9)
+                  clic: (t) => { tono(hz(48), 'triangle', 0.02, SUONO_CLIC, t); tono(hz(55), 'sine', 0.014, SUONO_CLIC * 0.7, t); tono(hz(60), 'sine', 0.009, SUONO_CLIC * 0.45, t); scatto(t, 0.012); },
+                  passa: (t) => { tono(hz(55), 'sine', 0.008, SUONO_CLIC * 0.4, t); tono(hz(60), 'sine', 0.006, SUONO_CLIC * 0.25, t); },
                   attiva: (t) => { tono(hz(48), 'sine', 0.42, 0.03, t, -0.2, 0.004); tono(hz(55), 'sine', 0.5, 0.026, t + 0.07, 0.2, 0.004); },
                   disattiva: (t) => { tono(hz(55), 'sine', 0.36, 0.024, t, 0.2, 0.004); tono(hz(48), 'sine', 0.42, 0.022, t + 0.07, -0.2, 0.004); },
                   annulla: (t) => { tono(hz(60), 'sine', 0.03, 0.022, t); tono(hz(55), 'sine', 0.05, 0.02, t + 0.04); },
@@ -2883,7 +2903,7 @@
                       if (!n && !costruisci())
                           return false;
                       try {
-                          if (ctx.state === 'suspended')
+                          if (ctx.state !== 'running' && ctx.state !== 'closed')      // anche 'interrupted' (iOS)
                               ctx.resume();
                       }
                       catch (e) { }
@@ -2975,6 +2995,7 @@
           }
           catch (e) { } };
           const suono = creaSuono(() => { preparaAudio(); return actx; });
+          root.__suono = suono;      // N1.5 (notte 25/11): per le misure del suono (prova con OfflineAudioContext), nessun effetto sulla pagina
           this._suono = suono;
           const DATI_RC = { storie: {} };
           const creaTuffo = () => {
@@ -3498,8 +3519,8 @@
                   modo('fine');
                   completa();
                   quadriEl.forEach((el) => { el.classList.remove('vivo'); el.classList.add('detto'); });
-                  if (D.stato)
-                      D.stato.textContent = NOME + ' · ' + (STATI.finita || '');
+                  if (D.stato)          // N1.8: un rifiuto resta «Rifiuto», mai seguito da «Ha risposto»
+                      D.stato.textContent = NOME + ' · ' + ((corr.classe === 'rifiuto' ? STATI.rifiuto : STATI.finita) || '');
                   if (interrotta && D.avviso)
                       D.avviso.textContent = PR.interrotta || '';
                   if (D.segui)
@@ -3782,12 +3803,38 @@
               volSuono.value = String(Math.round(lim(Number(prefSuono.vol), 0, 1) * 100));
               suono.volume(Number(volSuono.value) / 100);
           }
+          // N1.5 (notte 25/11): il contesto si riprende dentro il gesto (click e touchend); se dopo il tocco non gira ('suspended' o
+          // 'interrupted' su iOS), il tasto torna a «Suono» e una riga dice di toccare di nuovo
+          const notaSuono = q1('[data-suono-nonpartito]');
+          const riprendiAudio = () => { try {
+              if (actx && actx.state !== 'running' && actx.state !== 'closed')
+                  actx.resume();
+          }
+          catch (e) { } };
+          const controllaSuono = () => dopo(() => {
+              const gira = !!(actx && actx.state === 'running');
+              if (notaSuono)
+                  notaSuono.hidden = gira || !suono.acceso;
+              if (!gira && suono.acceso) {
+                  suono.spegni();
+                  mostraSuono('spento');
+                  if (gusSuono)
+                      gusSuono.classList.add('mostra');
+                  if (notaSuono)
+                      notaSuono.hidden = false;
+              }
+          }, 600);
           const accendiSuono = () => { if (suono.accendi()) {
+              riprendiAudio();
               prefSuono.on = true;
               salvaPref(prefSuono);
               mostraSuono('acceso');
               mostraPannello();
+              controllaSuono();
           } };
+          if (tastoSuono)
+              ascolta(tastoSuono, 'touchend', riprendiAudio, { passive: true });
+          ascolta(doc, 'click', riprendiAudio, { passive: true, capture: true });
           const spegniSuono = () => { suono.spegni(); prefSuono.on = false; salvaPref(prefSuono); mostraSuono('spento'); if (gusSuono)
               gusSuono.classList.remove('mostra'); };
           // niente avvio da solo: se l'avevi acceso in una visita precedente il tasto dice «Riprendi» e aspetta il tuo clic
@@ -3857,12 +3904,33 @@
           const preparaAudio = () => {
               if (actx)
                   return;
+              // N1.5 (notte 25/11): su iOS il suono della pagina segue il canale della riproduzione, non quello delle suonerie
+              try {
+                  if (win.navigator.audioSession)
+                      win.navigator.audioSession.type = 'playback';
+              }
+              catch (e) { }
               try {
                   const AC = win.AudioContext || win.webkitAudioContext;
                   if (!AC)
                       return;
                   actx = new AC();
                   this._actx = actx;
+                  // N1.5: iOS puo' interrompere il suono (una chiamata, un altro audio): il tasto lo dice e si riprende al tocco
+                  actx.addEventListener('statechange', () => {
+                      if (!suono.acceso)
+                          return;
+                      if (actx.state === 'interrupted' || actx.state === 'suspended') {
+                          mostraSuono('riprendi');
+                          if (notaSuono)
+                              notaSuono.hidden = false;
+                      }
+                      else if (actx.state === 'running') {
+                          mostraSuono('acceso');
+                          if (notaSuono)
+                              notaSuono.hidden = true;
+                      }
+                  });
                   analizzatore = actx.createAnalyser();
                   analizzatore.fftSize = 1024;
                   analizzatore.smoothingTimeConstant = 0.35;
@@ -3873,25 +3941,6 @@
                   actx = null;
                   analizzatore = null;
               }
-          };
-          const bufferVoce = new Map();
-          const caricaVoce = (d) => {
-              if (!d || !d.url || !actx || !win.fetch)
-                  return Promise.resolve(null);
-              if (!bufferVoce.has(d.url)) {
-                  bufferVoce.set(d.url, win.fetch(d.url).then((r) => { if (!r.ok)
-                      throw new Error('voce'); return r.arrayBuffer(); })
-                      .then((ab) => new Promise((ok, no) => { try {
-                      const pr = actx.decodeAudioData(ab, ok, no);
-                      if (pr && pr.then)
-                          pr.then(ok, no);
-                  }
-                  catch (e) {
-                      no(e);
-                  } }))
-                      .catch(() => null));
-              }
-              return bufferVoce.get(d.url);
           };
           const livello = (an, buf) => {
               if (!an || !buf)
@@ -3948,8 +3997,72 @@
                       c.inizio = win.performance.now();
                   } });
           };
+          // N1.7 (notte 25/11): la voce suona da un solo elemento audio (data-voce-vera), sbloccato nel tocco che accende la voce e
+          // riusato per ogni risposta (anche per la voce dal vivo di vera_voce.js). Il testo aspetta l'audio fino a 6 s, poi partono
+          // insieme; se l'audio non parte, una riga lo dice («tocca per riprovare») e il testo scorre comunque. La sfera segue il tempo.
+          const ATTESA_VOCE = 6000;
+          const rigaVoce = q1('[data-voce-riprova]');
+          const mostraRigaVoce = (si) => { if (rigaVoce)
+              rigaVoce.hidden = !si; };
+          const precaricaVoce = (url) => {
+              if (!voceEl || !url)
+                  return;
+              const pieno = new URL(url, doc.baseURI).href;
+              if (voceEl.src !== pieno) {
+                  voceEl.preload = 'auto';
+                  voceEl.src = url;
+                  try {
+                      voceEl.load();
+                  }
+                  catch (e) { }
+              }
+          };
+          const sbloccaVoce = () => {      // dentro un gesto: l'elemento suona un istante di silenzio, poi e' sbloccato (iOS)
+              if (!voceEl || voceEl.dataset.sbloccato)
+                  return;
+              try {
+                  voceEl.src = SILENZIO;
+                  const pr = voceEl.play();
+                  voceEl.dataset.sbloccato = '1';
+                  if (pr && pr.then)
+                      pr.then(() => { try {
+                          if (voceEl.src === SILENZIO)
+                              voceEl.pause();
+                      }
+                      catch (e) { } }, () => { delete voceEl.dataset.sbloccato; });
+              }
+              catch (e) { }
+          };
+          const partiVoce = (c) => {
+              c.attesa = false;
+              c.inizio = win.performance.now();
+              if (!voceAttiva) {
+                  c.modo = 'tempo';
+                  c.vel = VEL_MUTO;
+                  return;
+              }
+              let pr = null;
+              try {
+                  voceEl.currentTime = 0;
+                  pr = voceEl.play();
+              }
+              catch (e) { pr = Promise.reject(e); }
+              c.modo = 'elemento';
+              const no = () => { if (clip === c && c.modo === 'elemento') {
+                  c.modo = 'tempo';
+                  c.vel = 1;
+                  c.inizio = win.performance.now() - (voceEl.currentTime || 0) * 1000;
+                  mostraRigaVoce(true);
+              } };
+              if (pr && pr.then)
+                  pr.then(() => { if (clip === c) {
+                      suono.voce(true);
+                      mostraRigaVoce(false);
+                  } }, no);
+          };
           const avviaClip = (d, onParola, fine) => {
               fermaClip();
+              mostraRigaVoce(false);
               if (!d) {
                   if (fine)
                       fine();
@@ -3960,56 +4073,48 @@
               const c = { d, onParola, fine, k: -1, inizio: win.performance.now(), modo: 'tempo', vel: voceAttiva || d.cadenza ? 1 : VEL_MUTO, finita: false, attesa: false, t0: 0 };
               clip = c;
               impostaStato('parla');
-              if (!voceAttiva || !d.url)
+              if (!voceAttiva || !d.url || !voceEl)
                   return;
-              preparaAudio();
-              if (!actx) {
-                  suonaElemento(c);
+              precaricaVoce(d.url);
+              if (voceEl.readyState >= 3) {        // abbastanza dati: si parte subito
+                  partiVoce(c);
                   return;
               }
-              try {
-                  if (actx.state === 'suspended')
-                      actx.resume();
-              }
-              catch (e) { }
-              c.attesa = true;
+              c.attesa = true;                     // il testo aspetta l'audio, fino a 6 s
+              const pronta = () => { if (clip === c && c.attesa) {
+                  win.clearTimeout(limite);
+                  partiVoce(c);
+              } };
               const limite = dopo(() => { if (clip === c && c.attesa) {
+                  voceEl.removeEventListener('canplay', pronta);
                   c.attesa = false;
                   c.modo = 'tempo';
                   c.vel = 1;
                   c.inizio = win.performance.now();
-              } }, 2500);
-              caricaVoce(d).then((buf) => {
-                  if (clip !== c || !c.attesa)
-                      return;
-                  win.clearTimeout(limite);
-                  c.attesa = false;
-                  c.inizio = win.performance.now();
-                  if (!voceAttiva) {
-                      c.modo = 'tempo';
-                      c.vel = VEL_MUTO;
-                      return;
-                  }
-                  if (buf && actx.state !== 'closed') {
-                      try {
-                          const s = actx.createBufferSource();
-                          s.buffer = buf;
-                          s.connect(analizzatore);
-                          s.onended = () => { if (clip === c)
-                              c.finita = true; };
-                          s.start();
-                          sorgente = s;
-                          c.modo = 'buffer';
-                          c.buf = buf;
-                          c.t0 = actx.currentTime;
-                          suono.voce(true);
-                          return;
-                      }
-                      catch (e) { }
-                  }
-                  suonaElemento(c);
-              });
+                  mostraRigaVoce(true);
+              } }, ATTESA_VOCE);
+              voceEl.addEventListener('canplay', pronta, { once: true });
           };
+          if (rigaVoce)       // «tocca per riprovare»: dentro il tocco, l'audio riparte dal punto del testo
+              ascolta(rigaVoce, 'click', () => {
+                  const c = clip;
+                  if (!c || !c.d || !c.d.url || !voceEl)
+                      return;
+                  voceAttiva = true;
+                  precaricaVoce(c.d.url);
+                  try {
+                      voceEl.currentTime = Math.max(0, tempoClip(c));
+                  }
+                  catch (e) { }
+                  const pr = voceEl.play();
+                  if (pr && pr.then)
+                      pr.then(() => { if (clip === c) {
+                          c.modo = 'elemento';
+                          c.attesa = false;
+                          mostraRigaVoce(false);
+                          suono.voce(true);
+                      } }, () => { });
+              });
           if (voceEl)
               ascolta(voceEl, 'ended', () => { if (clip && clip.modo === 'elemento')
                   clip.finita = true; });
@@ -4031,7 +4136,9 @@
                   const dur = c.d.durata || 0;
                   const scaduto = !c.attesa && win.performance.now() - c.inizio > (dur / (c.vel || 1) + 4) * 1000;
                   const finito = c.modo === 'tempo' ? tc >= dur : (c.finita || tc >= dur + 0.3 || scaduto);
-                  const ampT = c.attesa ? 0.06 : (c.modo === 'buffer' && analizzatore ? livello(analizzatore, bufA) : 0.04);
+                  // N1.7: con l'elemento audio la sfera segue il tempo delle parole (nessun analizzatore: su iOS da' problemi)
+                  const w = pa[k], inParola = !!(w && tc >= w[1] && tc <= (w[2] || w[1] + 0.3));
+                  const ampT = c.attesa ? 0.06 : (c.modo === 'buffer' && analizzatore ? livello(analizzatore, bufA) : c.modo === 'elemento' ? (inParola ? 0.13 : 0.05) : 0.04);
                   ampV += (ampT - ampV) * (1 - Math.exp(-dt * 22));
                   if (finito) {
                       clip = null;
@@ -4179,6 +4286,8 @@
               } }, 2600);
           };
           const chiediVera = (testo, id, via) => {
+              if (id && voceAttiva && AUDIO[id] && AUDIO[id].file)     // N1.7: l'audio si chiede gia' al tocco sulla domanda
+                  precaricaVoce(AUDIO[id].file);
               if (!CATALOGO) {
                   avvisa((PAROLE.stati_js || {}).caricamento || '');
                   return;
@@ -4234,6 +4343,11 @@
               if (voceEti)
                   voceEti.textContent = ((PC.voce || {})[voceAttiva ? 'accesa' : 'spenta']) || '';
               if (voceAttiva) {
+                  sbloccaVoce();
+                  try {
+                      win.localStorage.setItem('ncb.voce.v1', '1');
+                  }
+                  catch (e) { }
                   preparaAudio();
                   try {
                       if (actx && actx.state === 'suspended')
@@ -4462,6 +4576,23 @@
                   attesaViva = null;
                   const ok = d.esito === 'verificata' || d.esito === 'preparata';
                   const ES = PR.esiti || {};
+                  // N1.8 (notte 25/11): il servizio non ha risposto (ripiego): nessuna risposta di rifiuto. Si torna al Neural Core, lo stato
+                  // dice «Senza risposta dal vivo» e si aprono le domande proposte
+                  if (!ok && d.ripiego) {
+                      rifiutoAttivo = false;
+                      if (fusEl)
+                          fusEl.textContent = '';
+                      if (scena && scena.aperta)
+                          scena.chiudi(false);
+                      impostaStato('pronta');
+                      if (statoEl) {
+                          statoEl.textContent = ES.ripiego || '';
+                          statoEl.setAttribute('data-s', 'ripiego');
+                      }
+                      avvisa(d.testo_rifiuto || ES.ripiego || '');
+                      apriElenco('');
+                      return;
+                  }
                   const frasi = ok ? (d.frasi || []).map((f) => f.testo) : [d.testo_rifiuto || ''];
                   const f = ok ? ((((d.frasi || [])[0] || {}).fonti || [])[0] || fonte0) : null;
                   const esito = ok ? (d.esito === 'verificata' ? ES.verificata : ES.preparata) || '' : (d.ripiego ? ES.ripiego : ES.rifiutata) || '';
@@ -4711,7 +4842,7 @@
                   return;
               }
               const sug = tgt.closest('[data-chiedi-id]');
-              if (sug) {
+              if (sug && !sug.hasAttribute('data-esempio')) {
                   chiudiElenco();
                   if (inputCore)
                       inputCore.value = '';
@@ -4792,7 +4923,7 @@
                   t.scrollIntoView({ behavior: fermo ? 'auto' : 'smooth', block: 'start' });
           };
           root.addEventListener('click', this._clic);
-          // il campo del Neural Core (25/11, parte 1, punto 3): esempio, catalogo, elenco; funziona anche senza servizio
+          // il campo del Neural Core (24/11, parte 1, punto 3): esempio, catalogo, elenco; funziona anche senza servizio
           const normalizza = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
               .replace(/[^a-z0-9]+/g, ' ').trim();
           const nelCatalogo = (t) => {
@@ -4808,6 +4939,9 @@
               let n = 0;
               vociElenco.forEach((b) => { const ok = parole.every((w) => normalizza(b.textContent).includes(w));
                   b.parentNode.hidden = !ok; if (ok) n++; });
+              // N1.3: un tema senza voci visibili si nasconde
+              if (elencoEl)
+                  elencoEl.querySelectorAll('.elenco-gruppo').forEach((g) => { g.hidden = !g.querySelector('li[role="presentation"]:not([hidden]) [data-chiedi-id]'); });
               return n;
           };
           const elencoAperto = () => !!(elencoEl && !elencoEl.hidden);
@@ -4845,7 +4979,7 @@
               chiudiElenco();
               if (!v) {                               // Invio a campo vuoto: la domanda dell'esempio
                   if (esempioBtn)
-                      chiediVera('', esempioBtn.getAttribute('data-chiedi-id'), VIA.preparata || '');
+                      chiediVera('', esempioBtn.getAttribute('data-esempio-id'), VIA.preparata || '');
                   return;
               }
               const c = nelCatalogo(v);
@@ -4864,8 +4998,11 @@
               segnaCampo();
           };
           if (inputCore) {
-              ascolta(inputCore, 'focus', () => apriElenco(inputCore.value));
-              ascolta(inputCore, 'input', () => { segnaCampo(); apriElenco(inputCore.value); });
+              // N1.3: il tocco sul campo apre solo la tastiera; l'elenco si apre dal suo tasto o mentre si scrive
+              ascolta(inputCore, 'input', () => { segnaCampo(); if (inputCore.value.trim())
+                  apriElenco(inputCore.value);
+              else
+                  chiudiElenco(); });
               ascolta(inputCore, 'keydown', (e) => {
                   if (e.key === 'Escape' && elencoAperto()) {
                       e.preventDefault();
@@ -4914,8 +5051,7 @@
                   return;
               esempioI = (esempioI + 1) % ESEMPI.length;
               const x = ESEMPI[esempioI];
-              esempioBtn.setAttribute('data-chiedi-id', x.id);
-              esempioBtn.setAttribute('aria-label', (PC.chiedi || '') + ': ' + x.domanda);
+              esempioBtn.setAttribute('data-esempio-id', x.id);
               if (fermo) {
                   esempioTesto.textContent = x.domanda;
                   return;
@@ -4980,7 +5116,7 @@
               }, { threshold: 0.2 });
               osservati.forEach((el) => this._io.observe(el));
           }
-          // B11 (25/11): la sfera della prima schermata si disegna la prima volta con il suo carattere (gli anelli di scritte non
+          // B11 (24/11): la sfera della prima schermata si disegna la prima volta con il suo carattere (gli anelli di scritte non
           // cambiano dopo); se il carattere tarda, dopo 2,5 s si disegna comunque
           let caratterePronto = !doc.fonts || doc.fonts.status === 'loaded';
           if (!caratterePronto) {
@@ -5127,7 +5263,7 @@
               }
               lampoEl.style.setProperty('--lf', tf.lf.toFixed(3));
           };
-          // B3 (25/11): un solo ciclo, che dorme quando non c'e' niente da disegnare (nessun canvas visibile, niente in corso) o quando la
+          // B3 (24/11): un solo ciclo, che dorme quando non c'e' niente da disegnare (nessun canvas visibile, niente in corso) o quando la
           // scheda e' nascosta, e si sveglia allo scorrimento, al ridimensionamento, a un tocco o a un tasto. Il movimento non cambia.
           const tutteTele = qq('canvas');
           let dorme = false;
@@ -5135,12 +5271,16 @@
           const daDisegnare = (H) => !!((scena && scena.aperta) || clip || filo || (video && !video.paused)
               || tutteTele.some((c) => { const r = c.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < H; }));
           let ultimoGiro = 0;
+          // N1.1 (notte 25/11): nei primi 3 s il ciclo non dorme mai (una pagina che nasce nascosta o con le misure a zero, su un
+          // telefono, non deve restare ferma finche' non si scorre)
+          const nascita = win.performance.now();
+          const giovane = () => win.performance.now() - nascita < 3000;
           const continua = (fn, H) => {
-              if (doc.hidden) {
+              if (doc.hidden && !giovane()) {
                   dorme = fn;
                   return;
               }
-              if (daDisegnare(H))
+              if (daDisegnare(H) || giovane())
                   quiete = 0;
               else if (++quiete > 30) {          // mezzo secondo fermo, poi dorme
                   dorme = fn;
@@ -5154,7 +5294,14 @@
               else
                   win.requestAnimationFrame(fn);
           };
+          // al risveglio: se la larghezza e' cambiata o le misure erano a zero, si rifanno (la sola altezza che cambia, la barra del
+          // browser, resta come in B2)
+          const rimisura = () => {
+              if (this._ridim && (larghezza() !== wStabile || !wStabile || !hStabile || hStabile < 100))
+                  this._ridim(true);
+          };
           const sveglia = () => {
+              rimisura();
               if (!dorme || this._fermo || statico || doc.hidden)
                   return;
               const fn = dorme;
@@ -5162,16 +5309,21 @@
               quiete = 0;
               win.requestAnimationFrame(fn);
           };
-          ['scroll', 'resize'].forEach((ev) => ascolta(win, ev, sveglia, { passive: true }));
+          ['scroll', 'resize', 'pageshow', 'focus', 'load'].forEach((ev) => ascolta(win, ev, sveglia, { passive: true }));
           ['pointerdown', 'touchstart', 'wheel', 'keydown', 'click'].forEach((ev) => ascolta(doc, ev, sveglia, { passive: true }));
           ascolta(doc, 'visibilitychange', sveglia);
+          if (win.visualViewport)
+              ascolta(win.visualViewport, 'resize', sveglia, { passive: true });
+          // un controllo ogni secondo: se dorme e c'e' qualcosa da disegnare, riparte; se le misure erano a zero, si rifanno
+          ogni(() => { rimisura(); if (dorme && !doc.hidden && daDisegnare(altezza()))
+              sveglia(); }, 1000);
           this._sveglia = sveglia;
           const ciclo = (t) => {
               if (this._fermo)
                   return;
               if (statico)
                   return;
-              if (altezza() > 1600) {
+              if (altezza() > SOGLIA_STATICA) {
                   passaAStatico();
                   return;
               }
@@ -5604,12 +5756,12 @@
               wStabile = w;
               oStabile = o;
               hStabile = altezzaVera();
-              if (!statico && altezza() > 1600) {
+              if (!statico && altezza() > SOGLIA_STATICA) {
                   passaAStatico();
                   return;
               }
               if (!statico)
-                  root.style.setProperty('--vh', Math.round(lim(altezza(), 560, 1200)) + 'px');
+                  root.style.setProperty('--vh', Math.round(lim(altezza(), 560, SOGLIA_STATICA)) + 'px');
               segnaBasso();
               dimensionaTutto();
               statoSugg();
