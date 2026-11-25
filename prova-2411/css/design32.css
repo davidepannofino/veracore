@@ -918,3 +918,28 @@ body.v32 #barra-fissa { -webkit-backdrop-filter: none; backdrop-filter: none; ba
 /* passaggi di sfondo senza tagli netti: la carta di «Provalo» sfuma nella stanza scura del Neural Core */
 .pagina .provalo-32{position:relative}
 .pagina .provalo-32::after{content:"";position:absolute;left:0;right:0;bottom:0;height:min(18vh,160px);background:linear-gradient(to bottom,rgba(14,16,18,0),rgba(14,16,18,.08));pointer-events:none}
+/* N3.2 (notte 25/11): cambio pagina con sfocatura. Dove il browser ha le transizioni fra documenti le fa lui (@view-transition);
+   altrove transizione32.js aggiunge «uscita» per 160 ms prima di cambiare pagina. Le entrate delle pagine interne usano .entra */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:160ms var(--ease-standard,ease) both v32-esce}
+::view-transition-new(root){animation:260ms var(--ease-standard,ease) both v32-entra}
+@keyframes v32-esce{to{opacity:0;filter:blur(6px)}}
+@keyframes v32-entra{from{opacity:0;filter:blur(6px)}}
+html.uscita body{opacity:0;filter:blur(6px);transition:opacity .16s ease,filter .16s ease}
+.entra.entra-sola.entrata{opacity:1;transform:none;filter:none}
+@media (prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none}html.uscita body{opacity:1;filter:none;transition:none}}
+/* N3.3 (notte 25/11): pagine interne, una cosa per schermata: apertura (titolo, una frase, al massimo tre azioni), poi gruppi
+   chiusi con una riga di titolo e una freccia; le tabelle scorrono dentro il loro riquadro, la pagina mai di lato */
+body.interne32 .azioni-apertura{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0 40px}
+body.interne32 .azioni-apertura .tasto{text-decoration:none}
+body.interne32 .azioni-apertura .tasto.scuro{background:#141517;color:#F2F1EC}
+body.interne32 .azioni-apertura .tasto.chiaro{background:#E7E6E0;color:#141517}
+body.interne32 details.gruppo-interno>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;font:500 15px/1.35 var(--font-main,"Geist Mono",monospace);list-style:none}
+body.interne32 details.gruppo-interno>summary::-webkit-details-marker{display:none}
+body.interne32 details.gruppo-interno>summary::after{content:"›";font-size:20px;color:#5F6166;transition:transform .2s}
+body.interne32 details.gruppo-interno[open]>summary::after{transform:rotate(90deg)}
+body.interne32 details.gruppo-interno>h3:first-of-type,body.interne32 details.gruppo-interno>section>h3:first-of-type{display:none}
+body.interne32 .tabella-scorre{max-width:100%;overflow-x:auto}
+body.interne32 main{overflow-wrap:anywhere}
+body.interne32 main>section#verifica,body.interne32 main>section#verifica>.colonna{padding-top:0!important;margin-top:0!important;border-top:0!important}
+body.interne32 main>h1.titolo-pagina{border:0;padding:0}

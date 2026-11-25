@@ -1,0 +1,36 @@
+/* N3.1 (notte 25/11): le pagine interne con i colori e il carattere della home (design 32): carta, inchiostro, arancio */
+body.interne32{--nero:#F2F1EC;--nero-rgb:242,241,236;--bianco:#141517;--bianco-rgb:20,21,23;--testo-chiaro:#4E5054;--chiaro:#4E5054;--grigio:#5F6166;
+  --grigio-leggibile:#5F6166;--ciano:#141517;--ciano-rgb:20,21,23;--ciano-chiaro:#000;--vetro:rgba(20,21,23,.04);--bordo-vetro:rgba(20,21,23,.14);
+  --ambra:#9A4A00;--fondo-barra-rgb:242,241,236;background:#F2F1EC;color:#141517;padding-bottom:0!important}
+body.interne32 main{max-width:1100px;margin:0 auto;padding:104px max(16px,min(3.4vw,44px)) 64px}
+body.interne32 main a{color:#141517;text-decoration:underline;text-decoration-color:#FF7A1A;text-underline-offset:3px}
+body.interne32 :focus-visible{outline:2px solid #FF7A1A;box-shadow:none}
+body.interne32 .pulsante,body.interne32 .bottone{background:#141517;color:#F2F1EC;border-radius:8px;text-decoration:none;text-transform:uppercase;letter-spacing:.03em;font-size:13px}
+body.interne32 .titolo-pagina,body.interne32 main h1{font:500 clamp(30px,3.4vw,52px)/1.1 var(--font-main,"Geist Mono",monospace);letter-spacing:-.04em;margin:0 0 20px}
+body.interne32 main h2{font-weight:500;letter-spacing:-.03em}
+body.interne32 main table{display:block;max-width:100%;overflow-x:auto}
+body.interne32 main details{border-top:1px dashed rgba(20,21,23,.32)}
+body.interne32 main summary{min-height:44px;cursor:pointer}
+body.interne32 .salta{background:#141517;color:#F2F1EC;border-color:#FF7A1A}
+body.interne32 .pagina-barra{background:transparent}
+body.interne32 .pagina-barra .nav-guscio{position:fixed}
+/* N3.4 (notte 25/11): la pagina del crash test, solo l'aspetto attorno: apertura, i passi come un registro (il passo attivo in piena
+   luce, gli altri attenuati), la zona del file in un riquadro come il portale, il Rapporto in una cornice «documento» (l'interno
+   del Rapporto non si tocca) */
+body.crash32{--fondo-campo:#E7E6E0;--bordo-campo:rgba(20,21,23,.32);--grigio-leggibile:#5F6166;--rosso-leggibile:#B3261E;--stampa-fondo:#fff;
+  --testo:"Geist Mono",ui-monospace,monospace;--titolo:"Geist Mono",ui-monospace,monospace;--mono:"Geist Mono",ui-monospace,monospace;color-scheme:light}
+body.crash32 main{max-width:960px}
+body.crash32 .occhiello{color:#5F6166;font-weight:500}
+body.crash32 h1{font-weight:500;letter-spacing:-.04em;font-size:clamp(30px,3.4vw,52px)}
+body.crash32 .privacy{border:0;border-left:3px solid #FF7A1A;background:#E7E6E0;border-radius:0 8px 8px 0}
+body.crash32 .privacy strong{color:#141517}
+body.crash32 .passo{border:0;border-top:1px dashed rgba(20,21,23,.32);padding:22px 0 18px 0;margin:0!important;max-width:none;opacity:.55;transition:opacity .3s}
+body.crash32 .passo.attivo,body.crash32 .passo:focus-within,body.crash32 #domande-pronte{opacity:1}
+body.crash32 .passo h2{font-weight:500;letter-spacing:-.02em;margin-top:0}
+body.crash32 button,body.crash32 .bottone{background:#141517;color:#F2F1EC;border-color:#141517;font-family:inherit;text-transform:uppercase;letter-spacing:.03em;font-size:13px;border-radius:8px}
+body.crash32 button.secondario{background:transparent;color:#141517}
+body.crash32 button:disabled{background:transparent;color:#8E9297;border-color:rgba(20,21,23,.2)}
+body.crash32 #zona{border:1px dashed rgba(20,21,23,.45);border-radius:14px;background:#E7E6E0;padding:32px 20px}
+body.crash32 #zona.sopra{border-color:#FF7A1A;background:#DBDAD3}
+body.crash32 iframe{border:1px solid rgba(20,21,23,.2);border-radius:4px;box-shadow:0 24px 48px -24px rgba(0,0,0,.35);background:#fff;padding:0}
+body.crash32 progress{accent-color:#FF7A1A}
