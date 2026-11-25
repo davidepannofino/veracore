@@ -802,7 +802,9 @@ body.v32 #barra-fissa { -webkit-backdrop-filter: none; backdrop-filter: none; ba
 .suono-on .barre i:nth-child(3){animation-duration:1.3s;animation-delay:-.6s}
 .suono-on .barre i:nth-child(4){animation-duration:.95s;animation-delay:-.2s}
 .suono-pannello{position:absolute;right:0;top:calc(100% + 12px);width:248px;padding:12px 12px 10px;border-radius:8px;background:var(--stanza);border:1px solid rgba(236,237,232,.14);box-shadow:0 16px 36px -16px rgba(0,0,0,.6);color:var(--brina);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .2s var(--ease-standard),transform .2s var(--ease-standard),visibility 0s linear .2s;z-index:2}
-.suono-on .nav-suono-guscio:hover .suono-pannello,.suono-on .nav-suono-guscio:focus-within .suono-pannello,.nav-suono-guscio.mostra .suono-pannello{opacity:1;visibility:visible;transform:none;transition-delay:0s}
+.nav-suono-guscio.mostra .suono-pannello{opacity:1;visibility:visible;transform:none;transition-delay:0s}
+/* N4 (25/11, telefono): :hover e :focus-within aprono il pannello solo con il mouse (al tocco restavano attivi e non si chiudeva piu') */
+@media (hover:hover) and (pointer:fine){.suono-on .nav-suono-guscio:hover .suono-pannello,.suono-on .nav-suono-guscio:focus-within .suono-pannello{opacity:1;visibility:visible;transform:none;transition-delay:0s}}
 .suono-pannello::before{content:"";position:absolute;left:0;right:0;top:-14px;height:14px}
 .suono-vol{display:flex;align-items:center;gap:10px;font:400 10.5px/1 var(--font-main);text-transform:uppercase;letter-spacing:.05em;color:var(--nebbia)}
 .suono-vol input{flex:1;min-width:0;height:24px;accent-color:var(--accent);cursor:pointer}
@@ -1186,3 +1188,32 @@ body.interne32 main details.scheda>summary .scheda-riga{display:-webkit-box;-web
 .righe-mov .passi-pista .passo :is(.passo-titolo,.passo-testo) span:not(.riga-p):not(.riga-in):not(.cifra){display:inline}
 .righe-mov .passi-pista .passo :is(.passo-titolo,.passo-testo) span.cifra{display:inline-block}
 .righe-mov .passi-pista .passo :is(.passo-titolo,.passo-testo) span.riga-p,.righe-mov .passi-pista .passo :is(.passo-titolo,.passo-testo) span.riga-in{display:block}
+/* N1 (25/11, telefono): sotto i 900 px la tela della sfera dei passi resta nel suo riquadro (0,56 dello schermo) invece di prendere
+   l'altezza dello schermo intero (regola M2 dei livelli fissi), e il testo dei passi sta sopra, con un fondo sfumato */
+@media (max-width:899px){
+  .metodo-dx .core-fisso{height:100%}
+  .passi-pista .passi:not(.classico *){z-index:3}
+  .passi-pista .passi:not(.classico *)::before{content:"";position:absolute;left:-16px;right:-16px;top:-24px;bottom:0;z-index:-1;pointer-events:none;
+    background:linear-gradient(to bottom,rgba(14,16,18,0),rgba(14,16,18,.82) 24px,rgba(14,16,18,.82))}
+}
+/* N2 (25/11, telefono): il riquadro del percorso nel Neural Core non trattiene il trascinamento (overscroll-behavior: contain lo
+   tratteneva anche senza niente da scorrere): al tocco il gesto passa alla pagina */
+@media (hover:none),(pointer:coarse){.percorso{overscroll-behavior:auto}}
+/* N3 (25/11): invio a campo vuoto: un piccolo cenno del campo, niente parte */
+[data-form-core].cenno{animation:n3-cenno .32s var(--ease-standard,ease)}
+@keyframes n3-cenno{25%{transform:translateX(-5px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+@media (prefers-reduced-motion:reduce){[data-form-core].cenno{animation:none}}
+/* N5 (25/11, telefono): l'ingresso con il suono. Un tasto grande e, sotto, piccolo, l'ingresso senza suono; la pagina ferma finche'
+   non si entra; con il movimento ridotto compare senza animazione */
+html.ingresso-chiuso,html.ingresso-chiuso body{overflow:hidden;overscroll-behavior:none}
+.ingresso{position:fixed;left:0;right:0;bottom:calc(max(28px,env(safe-area-inset-bottom)) + 24px);z-index:80;display:flex;flex-direction:column;align-items:center;gap:10px;
+  opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .45s var(--ease-standard,ease),transform .45s var(--ease-standard,ease)}
+.ingresso.pronto{opacity:1;transform:none;pointer-events:auto}
+.ingresso-entra{min-width:min(78vw,260px);min-height:60px;padding:0 28px;border:0;border-radius:999px;background:var(--accent,#FF7A1A);color:#141517;
+  font:500 17px/1 var(--font-main);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;box-shadow:0 14px 40px -12px rgba(255,122,26,.55)}
+.ingresso-muto{min-height:44px;padding:0 12px;border:0;background:none;color:var(--nebbia,#9EA2A6);font:400 12.5px/1 var(--font-main);letter-spacing:.03em;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.ingresso{transition:none;transform:none}}
+/* N7 (25/11, telefono): il ritardo d'entrata delle righe di «Provalo» vale solo per l'entrata (opacita', posizione, sfocatura), non
+   per lo sfondo e il colore: cosi' la riga attiva cambia subito, con un solo stile (fondo scuro e filo arancione insieme) */
+.registro-provalo .registro-riga{transition-property:opacity,transform,filter,background-color,color;
+  transition-duration:.5s,.5s,.5s,.12s,.12s;transition-delay:calc(var(--i,1) * .45s),calc(var(--i,1) * .45s),calc(var(--i,1) * .45s),0s,0s}

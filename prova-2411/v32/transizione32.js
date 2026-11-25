@@ -110,9 +110,12 @@
   if (d.body && d.body.classList.contains("interne32")) {
     const t = d.querySelector(".torna-dove"), r = leggi();
     if (t) {      // non copre il testo mentre si legge: si sposta scendendo, torna risalendo, in cima e in fondo alla pagina
-      let ult = w.scrollY, coda = false;
+      // N9 (25/11): visibile subito all'arrivo; si sposta solo per uno scorrimento fatto da chi legge (non per il salto all'ancora)
+      let ult = w.scrollY, coda = false, gesto = false;
+      ["touchstart", "wheel", "keydown"].forEach((ev) => w.addEventListener(ev, () => { gesto = true; ult = w.scrollY; }, { passive: true, once: true }));
       w.addEventListener("scroll", () => { if (coda) return; coda = true; w.requestAnimationFrame(() => { coda = false; const y = w.scrollY;
         const fondo = y + w.innerHeight >= d.documentElement.scrollHeight - 120;
+        if (!gesto) { ult = y; return; }
         if (y < 160 || fondo || y < ult - 4) t.classList.remove("via"); else if (y > ult + 4) t.classList.add("via"); ult = y; }); }, { passive: true });
     }
     if (t && r && r.path) {

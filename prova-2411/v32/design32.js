@@ -166,6 +166,7 @@
               win.addEventListener('load', finePartenza, { once: true });
           const posizione = () => (scorre ? scorre.scrollTop : (win.scrollY || win.pageYOffset || 0));
           const ridotto = !!(win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
+          const alTocco = () => !!(win.matchMedia && win.matchMedia('(hover: none), (pointer: coarse)').matches);    // N2 (25/11)
           // N1.9 (notte 25/11): la pagina diventa statica solo oltre 2400 px di altezza (prima 1600, dal prototipo: proteggeva le
           // fotografie della pagina intera, dove la finestra e' alta quanto la pagina). Gli schermi 4K (2160) hanno il movimento
           const SOGLIA_STATICA = 2400;
@@ -965,6 +966,8 @@
                               ctx.stroke();
                               const sopra = Math.sin(s.a) < 0;
                               etichetta(SAT_ETI[s.n] || '', x, y + (sopra ? -16 : 17) * dpr, sat[j] > 0.05 ? mescolaCol(col, COL.segnale, sat[j]) : COL.nebbia, (0.55 + 0.45 * sat[j]) * jv, 'center');
+                              if (win.__misuraEti)            // N6 (25/11): solo per le prove, dove cadono le etichette (px CSS)
+                                  (win.__etiSat = win.__etiSat || {})[s.n] = { x: x / dpr, w: ctx.measureText(SAT_ETI[s.n] || '').width / dpr, W: ctx.canvas.width / dpr };
                           });
                       if (st.filo && st.filoA > 0.01) {
                           const tx = st.filo.x * dpr, ty = st.filo.y * dpr;
@@ -3750,7 +3753,11 @@
                   blocca(false);
                   sez.setAttribute('inert', '');
                   const a = doc.activeElement;
-                  if (!a || a === doc.body || sez.contains(a)) {
+                  if (alTocco()) {               // N2 (25/11): al tocco il fuoco non torna sul campo; esce solo dalla risposta chiusa
+                      if (a && sez.contains(a) && a.blur)
+                          a.blur();
+                  }
+                  else if (!a || a === doc.body || sez.contains(a)) {
                       const t = inputCore;
                       if (t) {
                           try {
@@ -3931,8 +3938,21 @@
               gusSuono.classList.add('mostra');
               if (timerPannello)
                   win.clearTimeout(timerPannello);
-              timerPannello = dopo(() => gusSuono.classList.remove('mostra'), 4500);
+              timerPannello = dopo(() => gusSuono.classList.remove('mostra'), 4000);      // N4: 4 s senza tocchi
           };
+          // N4 (25/11, telefono): al tocco il pannello si apre solo con .mostra e si chiude con il secondo tocco sul tasto, un tocco fuori,
+          // lo scorrimento o 4 s senza tocchi; dopo il tocco il tasto perde il fuoco (niente :focus-within che lo tenga aperto)
+          if (gusSuono) {
+              let eraAperto = false;
+              const chiudiPannello = () => { gusSuono.classList.remove('mostra'); if (timerPannello) { win.clearTimeout(timerPannello); timerPannello = 0; } };
+              ascolta(doc, 'pointerdown', (e) => { eraAperto = gusSuono.classList.contains('mostra');
+                  if (!eraAperto) return;
+                  if (!gusSuono.contains(e.target)) chiudiPannello();
+                  else if (!(tastoSuono && tastoSuono.contains(e.target))) mostraPannello(); }, { capture: true, passive: true });
+              ascolta(win, 'scroll', () => { if (alTocco() && gusSuono.classList.contains('mostra')) chiudiPannello(); }, { passive: true });
+              if (tastoSuono)
+                  ascolta(tastoSuono, 'click', () => { if (!alTocco()) return; if (eraAperto) chiudiPannello(); dopo(() => { try { tastoSuono.blur(); } catch (x) { } }, 0); });
+          }
           if (volSuono) {
               volSuono.value = String(Math.round(lim(Number(prefSuono.vol), 0, 1) * 100));
               suono.volume(Number(volSuono.value) / 100);
@@ -4576,6 +4596,49 @@
               else
                   modulo.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
           };
+          // N5 (25/11, telefono): ingresso con il suono (proposte.ingresso_con_suono). Alla fine dell'apertura «Entra» (grande) e «Entra
+          // senza suono» (piccolo); la pagina non scorre finche' non si entra. «Entra» sblocca l'audio dentro il tocco e accende suono,
+          // effetti e voce; «Entra senza suono» li spegne. Una volta per sessione: tornando da una pagina interna non si ripete
+          const giaEntrato = () => { try { return win.sessionStorage.getItem('v32-entrato') === '1'; } catch (e) { return false; } };
+          if (PAROLE.ingresso_con_suono && alTocco() && !giaEntrato()) {      // al tocco: e' li' che l'audio aspetta un tocco
+              const PI = PAROLE.ingresso || {};
+              const porta = doc.createElement('div'); porta.className = 'ingresso'; porta.setAttribute('role', 'group');
+              const bE = doc.createElement('button'); bE.type = 'button'; bE.className = 'ingresso-entra'; bE.textContent = PI.entra || '';
+              const bM = doc.createElement('button'); bM.type = 'button'; bM.className = 'ingresso-muto'; bM.textContent = PI.senza_suono || '';
+              porta.appendChild(bE); porta.appendChild(bM); root.appendChild(porta);
+              doc.documentElement.classList.add('ingresso-chiuso');
+              const ferma = (e) => { if (e.target && e.target.closest && e.target.closest('.ingresso')) return; e.preventDefault(); e.stopImmediatePropagation(); };
+              const tasti = (e) => { if (!(e.target && e.target.closest && e.target.closest('.ingresso')) && [' ', 'PageDown', 'PageUp', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) { e.preventDefault(); e.stopImmediatePropagation(); } };
+              win.addEventListener('wheel', ferma, { passive: false, capture: true });
+              win.addEventListener('touchmove', ferma, { passive: false, capture: true });
+              win.addEventListener('keydown', tasti, { capture: true });
+              const entra = (conSuono) => {
+                  try { win.sessionStorage.setItem('v32-entrato', '1'); } catch (e) { }
+                  win.removeEventListener('wheel', ferma, { capture: true });
+                  win.removeEventListener('touchmove', ferma, { capture: true });
+                  win.removeEventListener('keydown', tasti, { capture: true });
+                  doc.documentElement.classList.remove('ingresso-chiuso');
+                  porta.classList.remove('pronto');
+                  dopo(() => porta.remove(), 420);
+                  if (conSuono) {
+                      preparaAudio();
+                      try { if (actx && actx.resume) actx.resume(); } catch (e) { }
+                      prefSuono.on = true;
+                      salvaPref(prefSuono);
+                      try { suono.accendi(); } catch (e) { }
+                      mostraSuono('acceso');
+                      if (!voceAttiva) cambiaVoce();
+                  }
+                  else {
+                      spegniSuono();
+                      if (voceAttiva) cambiaVoce();
+                  }
+              };
+              ascolta(bE, 'click', () => entra(true));
+              ascolta(bM, 'click', () => entra(false));
+              dopo(() => { porta.classList.add('pronto'); try { bE.focus({ preventScroll: true }); } catch (e) { } }, fermo ? 0 : 1800);
+              root.__ingresso = porta;
+          }
           const cambiaVoce = () => {
               voceAttiva = !voceAttiva;
               root.__voceAccesa = voceAttiva;
@@ -4705,7 +4768,7 @@
               const rcEl = q1('[data-racconto]');
               if (rcEl)
                   rcEl.classList.remove('in-pausa', 'intero');
-              if (inputCore) {
+              if (inputCore && !alTocco()) {     // N2 (25/11): al tocco il fuoco non torna sul campo (la tastiera non si apre e la pagina restava ferma)
                   try {
                       inputCore.focus({ preventScroll: true });
                   }
@@ -4797,14 +4860,14 @@
               micEvento('fine');
               const t = testoMic.trim();
               testoMic = '';
-              if (!t)                   // K1: niente testo, niente parte
+              if (!t) {                 // K1 e N3: niente testo, niente parte, e lo diciamo
+                  mostraNotaMic(true, PM.niente);
                   return;
+              }
               const gv = genV;
-              dopo(() => { if (gv === genV && inputCore && inputCore.value.trim() === t) {
-                  const inv = formCore ? formCore.querySelector('.invia') : null;
-                  if (inv)
-                      inv.click();
-              } }, 800);                // K1 e K5: la domanda parte dopo 0,8 s (la voce della risposta non prima di 300 ms dalla fine)
+              // N3 (25/11): parte il testo tenuto (ultimo risultato, finale o provvisorio), non quello riletto dal campo
+              dopo(() => { if (gv === genV)
+                  inviaDalCampo(t); }, 800);                // K1 e K5: la domanda parte dopo 0,8 s
           };
           const fermaAscolto = (g) => {
               if (g !== genMic || !ascoltoMic || tFine)
@@ -4848,10 +4911,12 @@
                       t += ev.results[i][0].transcript;
                   if (t.trim() && t !== testoMic)
                       micEvento('risultato');
-                  testoMic = t;
-                  if (inputCore) {
-                      inputCore.value = t;
-                      segnaCampo();
+                  if (t.trim()) {          // N3: un risultato vuoto (dopo il finale) non cancella il testo tenuto
+                      testoMic = t;
+                      if (inputCore) {
+                          inputCore.value = t;
+                          segnaCampo();
+                      }
                   }
                   if (tNiente) {
                       win.clearTimeout(tNiente);
@@ -5526,21 +5591,26 @@
               return null;
           };
           root.__instrada = instrada;
-          const inviaDalCampo = () => {
-              const v = inputCore ? inputCore.value.trim() : '';
-              voceServizio(true);
+          // N3 (25/11): «testo» e' il testo dettato tenuto dal microfono (non riletto dal campo); a campo vuoto non parte niente:
+          // un piccolo cenno del campo (l'esempio si apre solo toccando l'esempio)
+          const inviaDalCampo = (testo) => {
+              const v = (typeof testo === 'string' ? testo : (inputCore ? inputCore.value : '')).trim();
               chiudiElenco();
-              if (!v) {                               // Invio a campo vuoto: la domanda dell'esempio
-                  if (esempioBtn)
-                      chiediVera('', esempioBtn.getAttribute('data-esempio-id'), VIA.preparata || '');
+              if (!v) {
+                  if (formCore) {
+                      formCore.classList.remove('cenno');
+                      void formCore.offsetWidth;
+                      formCore.classList.add('cenno');
+                  }
                   return;
               }
+              voceServizio(true);
               const c = nelCatalogo(v);
               const idI = c ? null : instrada(v);
-              if (c)                                    // scritta uguale a una del catalogo: la risposta preparata
-                  chiediVera(c.domanda, c.id, VIA.preparata || '');
+              if (c)                                    // scritta uguale a una del catalogo: la risposta preparata (N3: titolo con le sue parole)
+                  chiediVera(c.domanda, c.id, VIA.preparata || '', v);
               else if (idI && CATALOGO && CATALOGO.per_id && CATALOGO.per_id[idI])
-                  chiediVera(CATALOGO.per_id[idI].domanda, idI, VIA.preparata || '');      // F4/H2: instradata, si apre come dall'elenco
+                  chiediVera(CATALOGO.per_id[idI].domanda, idI, VIA.preparata || '', v);      // F4/H2: instradata; N3: titolo = le parole di chi chiede
               else if (dalVivo)
                   chiediVera(v, null, VIA.scritta || '');
               else {                                    // senza servizio: l'elenco, filtrato con le sue parole
@@ -5559,9 +5629,11 @@
               // aperto, le parole lo filtrano
               ascolta(inputCore, 'input', () => { segnaCampo(); if (elencoAperto())
                   apriElenco(inputCore.value.trim() ? inputCore.value : ''); });
-              ascolta(inputCore, 'focus', () => { if (fermo) return; tast.on = true; tast.y0 = win.scrollY; tast.q = Math.max(qF, 0.62); tast.kb = -1; });
-              ascolta(inputCore, 'blur', () => { if (!tast.on) return; tast.on = false; tast.kb = -1; tast.tieni = win.performance.now() + 900; if (formCore) formCore.style.transform = ''; });
+              ascolta(inputCore, 'focus', () => { if (fermo) return; tast.on = true; tast.y0 = win.scrollY; tast.q = Math.max(qF, 0.62); tast.kb = -1; tast.h0 = win.innerHeight; tast.eraAperta = false; });
+              ascolta(inputCore, 'blur', () => { if (!tast.on) return; tast.on = false; tast.kb = -1; tast.tieni = tast.eraAperta ? win.performance.now() + 900 : 0; if (formCore) formCore.style.transform = ''; });
               ['wheel', 'touchstart', 'keydown'].forEach((ev) => ascolta(win, ev, () => { if (!tast.on) tast.tieni = 0; }));      // chi scorre davvero non viene trattenuto
+              // N2 (25/11): mai contro un gesto: a un trascinamento o alla rotella il campo perde il fuoco e la pagina scorre
+              ['touchmove', 'wheel'].forEach((ev) => ascolta(win, ev, () => { tast.tieni = 0; if (doc.activeElement === inputCore) inputCore.blur(); }, { passive: true }));
               ascolta(inputCore, 'keydown', (e) => {
                   if (e.key === 'Escape' && elencoAperto()) {
                       e.preventDefault();
@@ -5830,7 +5902,13 @@
           let qF = 0;
           // V2 (25/11): con il campo del Neural Core a fuoco (tastiera aperta) la scena resta ferma su «core aperto», il modulo si appoggia
           // sopra la tastiera (visualViewport), la pagina non salta e la sfera si riduce nello spazio sopra il modulo
-          const tast = { on: false, y0: 0, q: 0, kb: -1, tieni: 0 };
+          const tast = { on: false, y0: 0, q: 0, kb: -1, tieni: 0, h0: 0, eraAperta: false };
+          const geoN6 = { t: -1e9, W: 0, H: 0, barra: 64, modulo: 0 };
+          let distSatF = 1.45;
+          // N2 (25/11): la tenuta vale solo con la tastiera davvero aperta (visualViewport ridotto, o finestra accorciata di oltre 100 px)
+          const tastAperta = () => { if (!tast.on) return false; const vv = win.visualViewport;
+              const kb = vv ? win.innerHeight - vv.height - vv.offsetTop : 0;
+              const si = kb > 100 || (tast.h0 - win.innerHeight) > 100; if (si) tast.eraAperta = true; return si; };
           let qR = 0;
           let cameraSu = false;
           const posaCamera = (tf, sr, cx, cy) => {
@@ -6286,14 +6364,14 @@
                           const u = sicuro(lim((fermoDa - rp.top) / corsaP), 0) * passi.length;
                           const B = 0.1;
                           const liscio = (x) => { const y = lim(x); return y * y * (3 - 2 * y); };
-                          let migliore = -1;
+                          let piuAlta = -1;
                           passi.forEach((p, i) => {
                               const entra = i === 0 ? 1 : liscio((u - (i - B / 2)) / (B * 0.6));
                               const esce = i === passi.length - 1 ? 1 : 1 - liscio((u - (i + 1 - B / 2 + B * 0.4)) / (B * 0.6));
                               const o = sicuro(Math.min(entra, esce), 0);
                               const oS = o.toFixed(2), avS = lim(u - i).toFixed(2);
                               if (righeMov.on) {
-                                  if (o > migliore) { migliore = o; att = i; }
+                                  if (o > piuAlta) { piuAlta = o; att = i; }
                                   return;
                               }
                               if (p.__o !== oS) {          // si scrive solo quando cambia (niente ricalcolo degli stili a ogni giro)
@@ -6307,8 +6385,8 @@
                                   p.__av = avS;
                                   p.style.setProperty('--av', avS);
                               }
-                              if (o > migliore) {
-                                  migliore = o;
+                              if (o > piuAlta) {
+                                  piuAlta = o;
                                   att = i;
                               }
                           });
@@ -6439,7 +6517,7 @@
                   const vis = r.bottom > 0 && r.top < H;
                   if (vis) {
                       const corsa = Math.max(1, r.height - H);
-                      qF = tast.on ? tast.q : morbido(qF, lim(-r.top / corsa));
+                      qF = tastAperta() ? tast.q : morbido(qF, lim(-r.top / corsa));
                       const q = qF;
                       const ass = facile(lim(q / 0.34));
                       const sp = facile(lim((q - 0.26) / 0.22));
@@ -6486,7 +6564,27 @@
                       else if (!fermo && win.performance.now() < attentaFino && inputCore && inputCore.value)
                           lc += 0.06;
                       if (!tast.on && tast.tieni && (win.performance.now() < tast.tieni ? Math.abs(win.scrollY - tast.y0) > 2 && (win.scrollTo({ top: tast.y0, behavior: 'instant' }), true) : (tast.tieni = 0, false))) qF = tast.q;
-                      if (tast.on && formCore) {
+                      // N6 (25/11, telefono): sotto i 900 px, a core aperto, la sfera al centro dello spazio fra la barra e il modulo, con il
+                      // diametro minore fra il 78% della larghezza e il 70% di quello spazio, e le etichette dei satelliti dentro lo schermo
+                      distSatF = st ? 1.45 : 1.62;
+                      if (st && formCore && !tastAperta()) {
+                          const kN = facile(lim((sp - 0.5) / 0.5));
+                          if (kN > 0) {
+                              if (t - geoN6.t > 300 || geoN6.W !== Wv || geoN6.H !== H) {
+                                  const gb = q1('.nav-guscio'); geoN6.barra = gb ? gb.getBoundingClientRect().bottom : 64;
+                                  geoN6.modulo = formCore.getBoundingClientRect().top; geoN6.t = t; geoN6.W = Wv; geoN6.H = H;
+                              }
+                              const spazio = Math.max(120, geoN6.modulo - geoN6.barra - 8);
+                              const mezzaEti = 44, dentro = (Wv / 2 - mezzaEti - 8) / 0.82;      // 0,82 = coseno degli angoli dei satelliti
+                              const D = Math.min(0.78 * Wv, 0.70 * spazio, 2 * dentro / 1.22);
+                              ccx += (0.5 - ccx) * kN;
+                              ccy += ((geoN6.barra + 4 + spazio / 2) / H - ccy) * kN;
+                              cR += (D / 2 - cR) * kN;
+                              distSatF = 1.45 + (Math.min(1.45, Math.max(1.22, dentro / Math.max(1, cR))) - 1.45) * kN;
+                          }
+                      }
+                      if (!tastAperta() && tast.kb > 0 && formCore) { tast.kb = -1; formCore.style.transform = ''; }
+                      if (tastAperta() && formCore) {
                           const vv = win.visualViewport;
                           const kb = vv ? Math.max(0, Math.round(win.innerHeight - vv.height - vv.offsetTop)) : 0;
                           if (kb !== tast.kb) { tast.kb = kb; formCore.style.transform = kb ? 'translateY(' + (-kb) + 'px)' : ''; }
@@ -6533,7 +6631,7 @@
                               jv, amp: ampV, lc, luce, scanY, vibra: 0,
                               sat: satAttivo, anello: anelloTesto, filo: st || qS > 0.05 ? null : (tf && fus && filo ? { x: fus.ax + fus.dx * tf.cv, y: fus.ay + fus.dy * tf.cv, k: filo.k } : filo), filoA, attivo: statoC !== 'pronta',
                               anelloMax: zg.ring, anelloK: sp,
-                              ascolto: micOn, impulsi: impulsiMic, impulsiP: impulsiTasti, distSat: st ? 1.45 : 1.62,
+                              ascolto: micOn, impulsi: impulsiMic, impulsiP: impulsiTasti, distSat: distSatF,
                               gl: vivoGL, conto: statoC === 'da_inviare' ? contoFraz : 0, scena: qS > 0.01 ? { x: geo.sx, y: geo.sy, verticale: geo.verticale, q: qS } : null, verso: versoParola(), modo: figM, figCorta: figM > 0, tuffo: tf
                           }, t);
                       if (vivoGL && !dentroNucleo) {
