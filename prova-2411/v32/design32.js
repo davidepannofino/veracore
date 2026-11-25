@@ -457,6 +457,19 @@
                   ctx.fillText(testo, x, y);
               };
               const coda = [];
+              // U6 (ultimo giro 25/11): «Campione 1» e «Campione 2» si scrivono lettera per lettera quando compaiono (45 ms a lettera)
+              let campDa = 0;
+              const scriviCamp = (testo, a) => {
+                  if (a > 0.05) {
+                      if (!campDa)
+                          campDa = win.performance.now();
+                  }
+                  else if (a < 0.02)
+                      campDa = 0;
+                  if (ridotto || !campDa)
+                      return testo;
+                  return testo.slice(0, Math.max(0, Math.floor((win.performance.now() - campDa) / 45)));
+              };
               const pillola = (testo, x, y, col, a, allinea, accesa) => { if (a >= 0.02 && testo)
                   coda.push([testo, x, y, col, a, allinea || 'left', !!accesa]); };
               const tondo = (x, y, w, h, r) => {
@@ -1171,7 +1184,7 @@
                           ctx.lineTo(A[0] - 70 * dpr, A[1] + 74 * dpr);
                           ctx.lineTo(A[0] - 120 * dpr, A[1] + 74 * dpr);
                           ctx.stroke();
-                          pillola(String(CAMPIONI[0] || '').toUpperCase(), A[0] - 124 * dpr, A[1] + 74 * dpr, COL.brina, lab.camp, 'right', false);
+                          pillola(scriviCamp(String(CAMPIONI[0] || '').toUpperCase(), lab.camp), A[0] - 124 * dpr, A[1] + 74 * dpr, COL.brina, lab.camp, 'right', false);
                       }
                       if (B) {
                           ctx.strokeStyle = rgba(col, lab.camp * 0.35);
@@ -1180,7 +1193,7 @@
                           ctx.lineTo(B[0] + 70 * dpr, B[1] - 74 * dpr);
                           ctx.lineTo(B[0] + 120 * dpr, B[1] - 74 * dpr);
                           ctx.stroke();
-                          pillola(String(CAMPIONI[1] || '').toUpperCase(), B[0] + 124 * dpr, B[1] - 74 * dpr, COL.brina, lab.camp, 'left', false);
+                          pillola(scriviCamp(String(CAMPIONI[1] || '').toUpperCase(), lab.camp), B[0] + 124 * dpr, B[1] - 74 * dpr, COL.brina, lab.camp, 'left', false);
                       }
                   }
                   if (FA && FB && lab.sec > 0.02) {
@@ -2207,6 +2220,24 @@
           const scansione = q1('.scansione');
           const passi = qq('.passo');
           const pistaPassi = q1('.passi-pista'), olPassi = q1('.passi');
+          // U6 (ultimo giro 25/11): il contatore «03 / 06» si prepara una volta sola all'avvio; il movimento (contatore, barra, luce della
+          // tacca) lo fanno classi e ritardi CSS quando il passo diventa attivo. Titolo e frase parola per parola: provati e tolti (nella
+          // sezione i fotogrammi oltre 50 ms salivano oltre la base)
+          if (!fermo && pistaPassi) {
+              qq('.passi-pista .passo').forEach((p) => {
+                  const nEl = p.querySelector('.passo-num');
+                  const m = nEl ? /^(\d+)(.*)$/.exec(nEl.textContent) : null;
+                  if (m) {
+                      const k = Number(m[1]), L = m[1].length;
+                      nEl.textContent = '';
+                      const c = doc.createElement('span'); c.className = 'cnt'; c.setAttribute('aria-label', m[1]);
+                      const st = doc.createElement('span'); st.className = 'cnt-s'; st.setAttribute('aria-hidden', 'true');
+                      st.style.setProperty('--k', String(k - 1));
+                      for (let q = 1; q <= k; q++) { const r = doc.createElement('span'); r.textContent = String(q).padStart(L, '0'); st.appendChild(r); }
+                      c.appendChild(st); nEl.appendChild(c); nEl.appendChild(doc.createTextNode(m[2]));
+                  }
+              });
+          }
           const metodo = q1('.metodo');
           const risSez = q1('.risultato');
           const celleP = qq('.paz');
@@ -2301,8 +2332,11 @@
                       ev++;
               });
               odoR(String(ev));
-              if (risSez)
+              if (risSez) {
                   risSez.classList.toggle('completo', v >= celleP.length);
+                  if (v >= celleP.length && root.__contaSu)       // U7: il 34% conta quando il risultato compare
+                      root.__contaSu(q1('.esito .grande'));
+              }
           };
           let utentePausa = false;
           let avviato = false;
@@ -4121,10 +4155,17 @@
                   c.inizio = win.performance.now() - (voceEl.currentTime || 0) * 1000;
                   mostraRigaVoce(true);
               } };
+              const gv = genV;      // U3: se nel frattempo la risposta e' stata chiusa o cambiata, l'audio si ferma
               if (pr && pr.then)
-                  pr.then(() => { if (clip === c) {
+                  pr.then(() => { if (clip === c && gv === genV) {
                       suono.voce(true);
                       mostraRigaVoce(false);
+                  }
+                  else {
+                      try {
+                          voceEl.pause();
+                      }
+                      catch (x) { }
                   } }, no);
           };
           const avviaClip = (d, onParola, fine) => {
@@ -4352,7 +4393,20 @@
                       nodo[x].classList.remove('attivo'); });
               } }, 2600);
           };
+          // U3 (ultimo giro 25/11): una sola macchina a stati per la risposta, con il numero di generazione genV (aprire e chiudere lo
+          // aumentano; ogni seguito asincrono lo controlla). Un'apertura chiesta mentre la risposta si sta chiudendo parte quando la
+          // chiusura e' finita (solo l'ultima chiesta)
+          let chiusaFino = 0, inCoda = 0;
           const chiediVera = (testo, id, via) => {
+              const resta = chiusaFino - win.performance.now();
+              if (resta > 0) {
+                  const q = ++inCoda;
+                  dopo(() => { if (q === inCoda) {
+                      chiusaFino = 0;
+                      chiediVera(testo, id, via);
+                  } }, resta + 30);
+                  return;
+              }
               if (id && voceAttiva && AUDIO[id] && AUDIO[id].file)     // N1.7 e M4: l audio si sblocca e si carica gia nel tocco sulla domanda
                   sbloccaCon(AUDIO[id].file);
               else if (voceAttiva)
@@ -4529,8 +4583,14 @@
                   satAttivo = null;
                   avvisa('');
               }
-              if (scena && scena.aperta)
+              inCoda++;                 // U3: un'apertura in coda viene annullata dalla chiusura
+              if (scena && scena.aperta) {
                   scena.chiudi(false);
+                  chiusaFino = win.performance.now() + TEMPI_RC.tuffoUscita * (root.__tuffoScala || 1);
+              }
+              const rcEl = q1('[data-racconto]');
+              if (rcEl)
+                  rcEl.classList.remove('in-pausa', 'intero');
               if (inputCore) {
                   try {
                       inputCore.focus({ preventScroll: true });
@@ -4541,6 +4601,153 @@
           };
           ascolta(root, 'keydown', (e) => { if (e.key === 'Escape' && !elencoAperto() && chiudiRisposta())
               e.preventDefault(); });
+          // U4 (ultimo giro 25/11; decisione del gruppo del 25/11, 09:00): la domanda a voce. Il tasto esiste solo se il browser ha il
+          // riconoscimento vocale. Un tocco avvia UN ascolto (it-IT, continuous false, risultati parziali nel campo); mai ascolto continuo,
+          // nessuna parola che lo accenda da sola, nessuna registrazione: al servizio va solo il testo, come per una domanda scritta. Un secondo tocco
+          // ferma. Alla fine la domanda resta 0,8 s nel campo e parte come «Chiedi»; niente riconosciuto, niente parte.
+          const Riconoscitore = win.SpeechRecognition || win.webkitSpeechRecognition;
+          const PM = PC.microfono || {};
+          let tastoMic = null, notaMic = null, ascoltoMic = null, testoMic = '', finaleMic = false;
+          const PREF_MIC = 'ncb.mic.v1';
+          const mostraNotaMic = (si, testo) => { if (notaMic) {
+              notaMic.textContent = testo || PM.avviso || '';
+              notaMic.hidden = !si;
+              notaMic.classList.toggle('errore', !!testo);
+          } };
+          const statoMic = (on) => {
+              if (!tastoMic)
+                  return;
+              tastoMic.classList.toggle('ascolta', on);
+              tastoMic.setAttribute('aria-pressed', on ? 'true' : 'false');
+              tastoMic.setAttribute('aria-label', String((on ? PM.ferma_aria : PM.aria) || ''));
+              root.classList.toggle('mic-ascolta', on);
+              const nomeEl = q1('.hud-nome');
+              if (nomeEl) {
+                  let e = nomeEl.querySelector('.mic-stato');
+                  if (on && !e) {
+                      e = doc.createElement('span');
+                      e.className = 'mic-stato';
+                      nomeEl.appendChild(e);
+                  }
+                  if (e)
+                      e.textContent = on ? ' · ' + (PM.ascolta || '') : '';
+              }
+              if (statoEl && on)
+                  statoEl.textContent = NOME + ' · ' + (PM.ascolta || '');
+              else if (statoEl)
+                  statoEl.textContent = ETI[statoC] || statoC;
+              suono.voce(on);         // il suono d'ambiente si abbassa mentre ascolta
+          };
+          const fineAscolto = () => {
+              const t = testoMic.trim(), fin = finaleMic;
+              ascoltoMic = null;
+              statoMic(false);
+              try {
+                  win.localStorage.setItem(PREF_MIC, '1');
+              }
+              catch (x) { }
+              if (notaMic && !notaMic.classList.contains('errore'))
+                  mostraNotaMic(false);
+              if (!t || !fin)
+                  return;
+              const g = genV;
+              dopo(() => { if (g === genV && inputCore && inputCore.value.trim() === t) {
+                  const inv = formCore ? formCore.querySelector('.invia') : null;
+                  if (inv)
+                      inv.click();
+              } }, 800);
+          };
+          const avviaAscolto = () => {      // l'unico punto in cui parte il riconoscimento: dal tocco sul tasto
+              if (!Riconoscitore || ascoltoMic)
+                  return;
+              chiudiRisposta();                       // la voce di VERA, se parla, si ferma
+              chiudiElenco();
+              sbloccaVoce();                          // il tocco sblocca anche la voce della risposta che verra'
+              let r;
+              try {
+                  r = new Riconoscitore();
+              }
+              catch (x) {
+                  mostraNotaMic(true, PM.errore);
+                  if (inputCore)
+                      inputCore.focus();
+                  return;
+              }
+              r.lang = 'it-IT';
+              r.continuous = false;
+              r.interimResults = true;
+              r.maxAlternatives = 1;
+              testoMic = '';
+              finaleMic = false;
+              r.onresult = (ev) => {
+                  let t = '', fin = false;
+                  for (let i = 0; i < ev.results.length; i++) {
+                      t += ev.results[i][0].transcript;
+                      if (ev.results[i].isFinal)
+                          fin = true;
+                  }
+                  testoMic = t;
+                  finaleMic = finaleMic || fin;
+                  if (inputCore) {
+                      inputCore.value = t;
+                      segnaCampo();
+                  }
+              };
+              r.onerror = (ev) => {
+                  const e = ev && ev.error;
+                  if (e && e !== 'no-speech' && e !== 'aborted') {
+                      mostraNotaMic(true, PM.errore);
+                      if (inputCore)
+                          inputCore.focus();
+                  }
+              };
+              r.onend = fineAscolto;
+              ascoltoMic = r;
+              mostraNotaMic(true);
+              statoMic(true);
+              try {
+                  r.start();
+              }
+              catch (x) {
+                  ascoltoMic = null;
+                  statoMic(false);
+                  mostraNotaMic(true, PM.errore);
+                  if (inputCore)
+                      inputCore.focus();
+              }
+          };
+          if (Riconoscitore && formCore && inputCore) {
+              tastoMic = doc.createElement('button');
+              tastoMic.type = 'button';
+              tastoMic.className = 'mic';
+              tastoMic.setAttribute('data-mic', '1');
+              tastoMic.setAttribute('aria-pressed', 'false');
+              tastoMic.setAttribute('aria-label', String(PM.aria || ''));
+              tastoMic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3.5" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"></path></svg>';
+              const inv = formCore.querySelector('.invia');
+              formCore.insertBefore(tastoMic, inv || null);
+              notaMic = doc.createElement('p');
+              notaMic.className = 'nota-mic';
+              notaMic.setAttribute('role', 'status');
+              formCore.insertAdjacentElement('afterend', notaMic);
+              let prima = true;
+              try {
+                  prima = !win.localStorage.getItem(PREF_MIC);
+              }
+              catch (x) { }
+              mostraNotaMic(prima);                   // la prima volta l'avviso si vede subito
+              ascolta(tastoMic, 'click', (e) => {
+                  e.preventDefault();
+                  if (ascoltoMic) {                   // secondo tocco: ferma l'ascolto
+                      try {
+                          ascoltoMic.stop();
+                      }
+                      catch (x) { }
+                      return;
+                  }
+                  avviaAscolto();
+              });
+          }
           const fuocoAiComandi = (el) => { const a = doc.activeElement; if (inputCore && el && (a === el || !a || a === doc.body)) {
               try {
                   inputCore.focus({ preventScroll: true });
@@ -5285,6 +5492,48 @@
                   ioDue.observe(dueSez);
               }
           }
+          // U7 (ultimo giro 25/11): da «Il risultato» a «E con due campioni?». I 64 quadrati compaiono in onda quando la sezione entra;
+          // il 34% conta fino al valore quando il risultato compare, «0,83» quando si vede (numeri dal testo della pagina, cioe' dal
+          // file, e alla fine il testo esatto); il titolo «E con due campioni?» si compone come gli occhielli; la linea tratteggiata e
+          // le due barre si disegnano (CSS). Con il movimento ridotto tutto fermo e visibile
+          const contaSu = (el) => {
+              if (!el || fermo || el.__contato)
+                  return;
+              el.__contato = true;
+              const orig = el.textContent, m = /^(\D*)(\d+)(?:,(\d+))?(.*)$/.exec(orig.trim());
+              if (!m)
+                  return;
+              const dec = m[3] ? m[3].length : 0, fine = Number(m[2] + (dec ? '.' + m[3] : '')), t0 = win.performance.now();
+              const passo = (t) => { const k = Math.min(1, (t - t0) / 1100), v = fine * (1 - Math.pow(1 - k, 3));
+                  el.textContent = k < 1 ? m[1] + v.toFixed(dec).replace('.', ',') + m[4] : orig;
+                  if (k < 1)
+                      win.requestAnimationFrame(passo); };
+              win.requestAnimationFrame(passo);
+          };
+          root.__contaSu = contaSu;
+          if (risSez && !fermo) {
+              celleP.forEach((c, i) => c.style.setProperty('--j', String(i)));
+              if (win.IntersectionObserver) {
+                  const ioR = new win.IntersectionObserver((vv) => { if (vv.some((v) => v.isIntersecting)) {
+                      ioR.disconnect();
+                      risSez.classList.add('onda');
+                  } }, { threshold: 0.2 });
+                  ioR.observe(risSez);
+              }
+              else
+                  risSez.classList.add('onda');
+              const cifra = q1('.somiglianza .cifra');
+              if (cifra && win.IntersectionObserver) {
+                  const ioC = new win.IntersectionObserver((vv) => { if (vv.some((v) => v.isIntersecting && v.intersectionRatio > 0.9)) {
+                      ioC.disconnect();
+                      contaSu(cifra);
+                  } }, { threshold: [0.9, 1] });
+                  ioC.observe(cifra);
+              }
+          }
+          const tDue = q1('#t-due-campioni');
+          if (tDue && !fermo)
+              tDue.setAttribute('data-scramble', '1');
           const osservati = qq('[data-scramble]');
           if (!fermo && win.IntersectionObserver) {
               this._io = new win.IntersectionObserver((vv) => {
@@ -5500,6 +5749,133 @@
           ogni(() => { rimisura(); if (dorme && !doc.hidden && daDisegnare(altezza()))
               sveglia(); }, 1000);
           this._sveglia = sveglia;
+          // U5 (ultimo giro 25/11): il segno arancione degli intervalli (34% del risultato, i due di «E con due campioni?») si trascina in
+          // orizzontale lungo 0-100%; al rilascio torna da solo sul valore del file con una molla (circa 0,6 s) e un clic leggero quando
+          // si aggancia. Numero, intervallo ed etichette non cambiano mai; mentre si trascina c'e' solo la riga «valore misurato: …»
+          // (dal file). Presa di almeno 44 px, scorrimento verticale libero (touch-action: pan-y); con il movimento ridotto, niente.
+          const PT = PAROLE.trascina || {};
+          const segniIC = [];
+          if (!fermo) {
+              const rs = q1('svg.righello'), es = rs ? rs.closest('.esito') : null;
+              if (rs && rs.querySelector('circle.stima'))
+                  segniIC.push({ svg: rs, el: rs.querySelector('circle.stima'), x0: 10, x1: 510, attr: ['cx'],
+                      valore: es && es.querySelector('.grande') ? es.querySelector('.grande').textContent.trim() : '' });
+              qq('svg.barra-ic').forEach((sv) => { const g = sv.closest('.due-grande'), st = sv.querySelector('line.stima');
+                  if (!st || !g)
+                      return;
+                  const n = g.querySelector('.conta'), su = g.querySelector('.su');
+                  segniIC.push({ svg: sv, el: st, x0: 2, x1: 398, attr: ['x1', 'x2'],
+                      valore: ((n ? n.getAttribute('data-conta') : '') + (su ? su.textContent : '')).trim() }); });
+          }
+          segniIC.forEach((s) => {
+              const casa = Number(s.el.getAttribute(s.attr[0]));
+              s.casa = casa;
+              s.svg.classList.add('trascinabile');
+              const riga = doc.createElement('p');
+              riga.className = 'riga-misurata';
+              riga.hidden = true;
+              riga.textContent = String(PT.riga || '').replace('{valore}', s.valore);
+              s.svg.insertAdjacentElement('afterend', riga);
+              const posa = (x) => s.attr.forEach((a) => s.el.setAttribute(a, x.toFixed(1)));
+              const daSchermo = (cx) => { const r = s.svg.getBoundingClientRect(), vb = s.svg.viewBox.baseVal;
+                  return lim(vb.x + (cx - r.left) / Math.max(1, r.width) * vb.width, s.x0, s.x1); };
+              let presa = null, molla = 0;
+              ascolta(s.svg, 'pointerdown', (e) => {
+                  const r = s.svg.getBoundingClientRect(), vb = s.svg.viewBox.baseVal;
+                  const xs = r.left + (Number(s.el.getAttribute(s.attr[0])) - vb.x) / vb.width * r.width;
+                  if (Math.abs(e.clientX - xs) > 22)             // presa di 44 px attorno al segno
+                      return;
+                  presa = { id: e.pointerId, x: e.clientX, y: e.clientY, via: false };
+                  molla++;
+                  try {
+                      s.svg.setPointerCapture(e.pointerId);
+                  }
+                  catch (x) { }
+              });
+              ascolta(s.svg, 'pointermove', (e) => {
+                  if (!presa || e.pointerId !== presa.id)
+                      return;
+                  if (!presa.via && Math.abs(e.clientY - presa.y) > Math.abs(e.clientX - presa.x) + 4) {
+                      presa = null;                              // gesto verticale: e' uno scorrimento della pagina
+                      return;
+                  }
+                  presa.via = true;
+                  riga.hidden = false;
+                  s.svg.classList.add('trascina');
+                  posa(daSchermo(e.clientX));
+              });
+              const lascia = (e) => {
+                  if (!presa || (e && e.pointerId !== presa.id))
+                      return;
+                  presa = null;
+                  s.svg.classList.remove('trascina');
+                  const m = ++molla;
+                  let x = Number(s.el.getAttribute(s.attr[0])), v = 0, t0 = 0, scattato = false;
+                  const passo = (t) => {
+                      if (m !== molla)
+                          return;
+                      const dt = t0 ? Math.min(0.05, (t - t0) / 1000) : 0.016;
+                      t0 = t;
+                      v += (-170 * (x - s.casa) - 26 * v) * dt;     // molla smorzata: circa 0,6 s
+                      x += v * dt;
+                      if (Math.abs(x - s.casa) < 0.4 && Math.abs(v) < 8) {
+                          posa(s.casa);
+                          riga.hidden = true;
+                          if (!scattato)
+                              suono.evento('passa');               // il clic leggero dell'aggancio
+                          return;
+                      }
+                      posa(x);
+                      win.requestAnimationFrame(passo);
+                  };
+                  win.requestAnimationFrame(passo);
+              };
+              ascolta(s.svg, 'pointerup', lascia);
+              ascolta(s.svg, 'pointercancel', lascia);
+          });
+          // U2 (ultimo giro 25/11): la fascia sotto i livelli fissi (classe «sporge»), con il colore del fondo della loro sezione
+          const sporgenti = [q1('.finale .tuffo-fisso'), q1('.ris-fisso'), q1('.video-fisso'), q1('.passi-pista .passi')].filter(Boolean);
+          const fondoDi = (el) => { let n = el; while (n && n !== doc.documentElement) { const c = win.getComputedStyle(n).backgroundColor;
+              if (c && c !== 'transparent' && !/rgba\([^)]*,\s*0\)$/.test(c)) return c; n = n.parentElement; } return ''; };
+          sporgenti.forEach((el) => { const c = fondoDi(el); if (c) el.style.setProperty('--fondo-sporge', c); });
+          const segnaSporge = (H) => {
+              for (const el of sporgenti) {
+                  const r = el.getBoundingClientRect();
+                  let si = false;
+                  if (r.height > 0 && r.bottom > -10 && r.top < H + 10 && win.getComputedStyle(el).position === 'sticky') {
+                      const pr = el.parentElement.getBoundingClientRect();
+                      si = pr.bottom > r.bottom + 0.5;
+                  }
+                  if (el.__sporge !== si) {
+                      el.__sporge = si;
+                      if (si) {           // il colore del fondo che il livello mostra in basso, e la fascia larga tutto lo schermo
+                          const e = doc.elementFromPoint(Math.max(1, Math.min(larghezza() - 2, r.left + r.width / 2)), Math.max(0, Math.min(H - 1, r.bottom - 2)));
+                          const c = fondoDi(e && el.contains(e) ? e : el);
+                          if (c)
+                              el.style.setProperty('--fondo-sporge', c);
+                          el.style.setProperty('--sporge-sx', Math.round(-r.left) + 'px');
+                      }
+                      el.classList.toggle('sporge', si);
+                  }
+              }
+          };
+          this._segnaSporge = segnaSporge;
+          // U1 (ultimo giro 25/11): il riquadro di «Fonti» si apre dalla parte dello schermo dove c'e' piu' spazio, alto al massimo lo
+          // spazio libero e dentro i margini laterali; si ricalcola a ogni apertura
+          const posaFonti = (d) => {
+              const s = d.querySelector('summary');
+              if (!s || !d.open)
+                  return;
+              const q = s.getBoundingClientRect(), Hv = win.visualViewport ? win.visualViewport.height : win.innerHeight, Wv = larghezza();
+              const sopra = q.top - 72, sotto = Hv - q.bottom - 16;
+              const su = sopra > sotto;
+              d.classList.toggle('su', su);
+              d.style.setProperty('--fmax', Math.max(120, Math.round((su ? sopra : sotto) - 8)) + 'px');
+              const largo = Math.min(544, Wv - 32);
+              const sx = Math.min(0, Wv - 16 - largo - q.left) + Math.max(0, 16 - q.left);
+              d.style.setProperty('--fsx', Math.round(sx) + 'px');
+          };
+          qq('details.fonti-32').forEach((d) => ascolta(d, 'toggle', () => posaFonti(d)));
           // M1 (mattino 25/11): controllo della prima schermata a 1 s e a 3 s, a ogni pageshow e al ritorno visibile: in cima alla
           // pagina il testo deve vedersi, il livello fisso non e' nascosto e la sfera e' disegnata; altrimenti misure, stato e disegno
           // si rifanno
@@ -5573,6 +5949,8 @@
               const diag = Math.hypot(Wv, H);
               const st = stretto();
               // M1 (mattino 25/11): ogni numero passa da un controllo; dt sempre tra 0,001 e 0,05
+              if (this._segnaSporge)
+                  this._segnaSporge(H);
               const dtG = ultimoT ? (t - ultimoT) / 1000 : 0.016;
               const dt = Math.min(0.05, Math.max(0.001, isFinite(dtG) ? dtG : 0.016));
               ultimoT = t;

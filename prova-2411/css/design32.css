@@ -968,3 +968,91 @@ body.interne32 main>h1.titolo-pagina{border:0;padding:0}
 .modo-movimento .passi-pista .passo{transition:none}
 .passo-tacche i.ora{background:linear-gradient(90deg,var(--accent) calc(var(--av,1)*100%),rgba(236,237,232,.18) 0)}
 @media (max-width:899px){.modo-movimento .passi-pista{height:calc(var(--vh)*5.84)}}
+/* U1 (ultimo giro 25/11): ogni «Fonti» della home si apre e si richiude al tocco, in ogni posizione in cui il comando si vede.
+   La sezione dell'apertura lascia passare i tocchi fuori dal suo livello attivo; il comando riceve sempre i tocchi (anche dentro
+   testi che non li ricevono) e sta sopra i livelli vicini; il contenuto si apre in un riquadro sopra o sotto il comando, dentro lo
+   schermo visibile (altezza e lato scelti dallo script), cosi' il comando non si sposta e il secondo tocco lo richiude */
+.tuffo.prima-parte{pointer-events:none}
+.tuffo.prima-parte .tuffo-fisso:not(.passa):not(.via){pointer-events:auto}
+.pagina .fonti-32,.pagina .fonti-32 *{pointer-events:auto}
+.pagina .fonti-32{position:relative;z-index:30}
+.pagina .fonti-32[open]{z-index:45}
+.pagina .fonti-32>.fonti-corpo{position:absolute;left:var(--fsx,0px);width:min(34rem,calc(100vw - 32px));max-height:var(--fmax,50vh);overflow:auto;overscroll-behavior:contain;
+  padding:14px 16px;border:1px solid var(--linea);border-radius:10px;background:var(--paper);box-shadow:0 14px 40px rgba(20,21,23,.18);z-index:45;text-align:left}
+.pagina :is(.stanza,.stanza-core,.tuffo.finale) .fonti-32>.fonti-corpo{background:var(--stanza-2);border-color:var(--filo);box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.pagina .fonti-32.su>.fonti-corpo{bottom:calc(100% + 8px)}
+.pagina .fonti-32:not(.su)>.fonti-corpo{top:calc(100% + 8px)}
+/* U2 (ultimo giro 25/11): sotto ogni livello fisso (tuffo finale, risultato, video, passi) una fascia di 200 px del suo fondo,
+   solo mentre il livello e' fermo e la sua pista continua sotto: se lo schermo visibile e' piu' alto del livello (Chrome su iPad con
+   la barra ritirata) sotto non si vede mai la sezione dopo. Testi, comandi, canvas e maschera non si spostano: la fascia e' fuori
+   dal livello e non cambia la sua corsa */
+.sporge{z-index:6}
+.sporge:not(.tuffo-fisso):not(.video-fisso)::after{content:"";position:absolute;left:var(--sporge-sx,0px);width:100vw;top:100%;height:200px;background:var(--fondo-sporge,var(--paper));pointer-events:none}
+/* il tuffo finale e il video tagliano il proprio contenuto (overflow hidden): la fascia e' un'ombra piena spostata di 200 px */
+.tuffo-fisso.sporge,.video-fisso.sporge{box-shadow:0 200px 0 0 var(--fondo-sporge,var(--paper))}
+/* U4 (ultimo giro 25/11): il tasto della domanda a voce (solo se il browser ha il riconoscimento) e l'avviso sotto il campo */
+.barra-core .mic{flex:none;width:48px;height:48px;border-radius:8px;border:1px solid var(--filo);color:var(--brina);display:inline-flex;align-items:center;justify-content:center;position:relative;background:transparent}
+.barra-core .mic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.barra-core .mic.ascolta{border-color:var(--accent);color:var(--accent)}
+.barra-core .mic.ascolta::after{content:"";position:absolute;inset:-4px;border-radius:12px;border:1px solid var(--accent);animation:mic-impulso 1.2s var(--ease-standard) infinite}
+@keyframes mic-impulso{0%{opacity:.9;transform:scale(.94)}100%{opacity:0;transform:scale(1.18)}}
+.schermo-basso .barra-core .mic{height:42px}
+.nota-mic{margin:8px 2px 0;font:400 11.5px/1.5 var(--font-main);color:var(--nebbia);max-width:60ch}
+.nota-mic.errore{color:var(--accent)}
+.mic-stato{color:var(--accent)}
+@media (prefers-reduced-motion:reduce){.barra-core .mic.ascolta::after{animation:none}}
+/* U5 (ultimo giro 25/11): segni degli intervalli trascinabili in orizzontale; la pagina scorre in verticale */
+svg.trascinabile{touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none}
+svg.trascinabile.trascina{cursor:grabbing}
+.riga-misurata{margin:4px 0 0;font:400 11px/1.4 var(--font-main);letter-spacing:.03em;color:var(--etichetta)}
+/* U6 (ultimo giro 25/11): «Come lo misuriamo», il movimento dei testi dei passi con classi e ritardi (nessuno stile a ogni
+   fotogramma): il titolo entra parola per parola da dietro una riga (40 ms), il contatore scorre fino al numero, la barra cresce
+   dall'alto, la frase compare parola per parola (20 ms), all'uscita le parole salgono (la sfocatura e' quella del passo intero), la tacca nuova si riempie con
+   una luce che scorre. Con il movimento ridotto niente di questo */
+@media (prefers-reduced-motion:no-preference){
+.modo-movimento .passi-pista .passo{border-left-color:transparent}
+.modo-movimento .passi-pista .passo::before{content:"";position:absolute;left:-2px;top:0;bottom:0;width:2px;background:var(--accent);transform-origin:top;transform:scaleY(0)}
+.modo-movimento .passi-pista .passo.attivo::before{animation:u6-barra .7s var(--ease-roll) both}
+.modo-movimento .passi-pista .cnt{display:inline-block;height:1em;line-height:1;overflow:hidden;vertical-align:-.12em}
+.modo-movimento .passi-pista .cnt-s{display:flex;flex-direction:column}
+.modo-movimento .passi-pista .cnt-s>span{display:block;height:1em}
+.modo-movimento .passi-pista .passo.attivo .cnt-s{animation:u6-conta .7s var(--ease-roll) both}
+.modo-movimento .passi-pista .passo.attivo .passo-tacche i.ora{position:relative;overflow:hidden}
+.modo-movimento .passi-pista .passo.attivo .passo-tacche i.ora::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);animation:u6-luce 1.1s .35s ease-out both}
+@keyframes u6-barra{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes u6-conta{from{transform:translateY(0)}to{transform:translateY(calc(var(--k,0)*-1em))}}
+@keyframes u6-luce{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+}
+.passi-pista .cnt-s>span:not(:last-child){display:none}
+.modo-movimento .passi-pista .cnt-s>span:not(:last-child){display:block}
+@media (prefers-reduced-motion:reduce){.modo-movimento .passi-pista .cnt-s>span:not(:last-child){display:none}}
+.modo-movimento .passi-pista .passo{position:relative}
+/* U7 (ultimo giro 25/11): quadrati in onda, linea tratteggiata che si disegna, barre una dopo l'altra (solo con il movimento) */
+@media (prefers-reduced-motion:no-preference){
+.modo-movimento .risultato .paz{opacity:0}
+.modo-movimento .risultato.onda .paz{animation:u7-onda .5s var(--ease-roll) both;animation-delay:calc(var(--j,0)*14ms)}
+@keyframes u7-onda{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:none}}
+.modo-movimento .pagina .due-campioni,.pagina.modo-movimento .due-campioni{border-top-color:transparent;position:relative}
+.pagina.modo-movimento .due-campioni::before{content:"";position:absolute;left:0;right:0;top:-1px;border-top:1px dashed var(--tratteggio);transform-origin:left;transform:scaleX(0);transition:transform 1.3s var(--ease-roll)}
+.pagina.modo-movimento .due-campioni.entrata::before{transform:scaleX(1)}
+.pagina.modo-movimento .due-grande+.due-grande .barra-ic .ic{transition-delay:1s}
+}
+/* U8 (ultimo giro 25/11): pagine interne vive come la home (solo con il movimento) */
+@media (prefers-reduced-motion:no-preference){
+body.interne32 .riga-entra{opacity:0;transform:translateY(14px)}
+body.interne32 .righe-dentro>.riga-entra,body.interne32 .righe-dentro tr.riga-entra{animation:u8-riga .5s var(--ease-roll) both;animation-delay:calc(120ms + var(--r,0)*45ms)}
+@keyframes u8-riga{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+body.interne32 .pagina-barra nav{position:relative}
+body.interne32 .avanza{position:absolute;left:14px;right:14px;bottom:-7px;height:2px;border-radius:2px;background:var(--accent);transform-origin:left;transform:scaleX(0);pointer-events:none}
+body.interne32 :is(button,.tasto,.pulsante,summary,a.vai){transition:transform .12s var(--ease-standard)}
+body.interne32 :is(button,.tasto,.pulsante,summary,a.vai):active{transform:scale(.97)}
+body.crash32 #passo1,body.crash32 #passo2,body.crash32 #passo3{animation:u8-acceso .9s var(--ease-standard) backwards}
+body.crash32 #passo2{animation-delay:.35s}
+body.crash32 #passo3{animation-delay:.7s}
+@keyframes u8-acceso{0%{opacity:.25}60%{opacity:1}}
+body.crash32 progress#barra::-webkit-progress-value{background:linear-gradient(90deg,var(--accent),#FFB36B,var(--accent));background-size:200% 100%;animation:u8-scorre 1.1s linear infinite}
+body.crash32 progress#barra::-moz-progress-bar{background:linear-gradient(90deg,var(--accent),#FFB36B,var(--accent));background-size:200% 100%;animation:u8-scorre 1.1s linear infinite}
+@keyframes u8-scorre{from{background-position:200% 0}to{background-position:0 0}}
+body.crash32 #rapporto.cornice-entra{animation:u8-cornice .7s var(--ease-roll) both}
+@keyframes u8-cornice{from{opacity:0;transform:translateY(24px) scale(.985);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+}

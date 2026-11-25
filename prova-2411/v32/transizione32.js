@@ -28,6 +28,61 @@
     let k = 0;
     el.forEach((x) => { if (x.closest(".entra")) return; x.classList.add("entra", "entra-sola"); x.style.setProperty("--k", String(k++ % 8)); io.observe(x); });
   }
+  // U8 (ultimo giro 25/11): pagine interne vive come la home
+  if (d.body && d.body.classList.contains("interne32")) {
+    // il titolo si compone (lettere che cambiano fino al testo vero, come gli occhielli della home)
+    const h1 = d.querySelector("main h1");
+    if (h1 && h1.children.length === 0) {
+      const fine = h1.textContent, segni = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", t0 = performance.now();
+      h1.setAttribute("aria-label", fine);
+      const giro = (t) => { const k = Math.min(1, (t - t0) / 650), n = Math.floor(fine.length * k);
+        h1.textContent = fine.slice(0, n) + fine.slice(n).replace(/\S/g, () => segni[Math.floor(Math.random() * segni.length)]);
+        if (k < 1) w.requestAnimationFrame(giro); else { h1.textContent = fine; h1.removeAttribute("aria-label"); } };
+      w.requestAnimationFrame(giro);
+    }
+    // righe di elenchi e tabelle a scalare quando il loro blocco entra
+    if ("IntersectionObserver" in w) {
+      const io2 = new w.IntersectionObserver((vv) => vv.forEach((v) => { if (v.isIntersecting) { v.target.classList.add("righe-dentro"); io2.unobserve(v.target); } }), { threshold: 0 });
+      d.querySelectorAll("main ul, main ol, main table").forEach((l) => {
+        const righe = l.tagName === "TABLE" ? l.querySelectorAll("tr") : l.children;
+        Array.prototype.forEach.call(righe, (r, i) => { r.classList.add("riga-entra"); r.style.setProperty("--r", String(Math.min(i, 14))); });
+        io2.observe(l);
+      });
+    }
+    // i gruppi chiusi si aprono e si chiudono con un movimento (altezza e dissolvenza), non di scatto
+    d.querySelectorAll("details.gruppo-interno").forEach((g) => {
+      const s = g.querySelector(":scope > summary");
+      if (!s || !g.animate) return;
+      let anim = null;
+      s.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (anim) anim.cancel();
+        const da = g.offsetHeight, chiudi = g.open;
+        if (!chiudi) g.open = true;
+        const a = chiudi ? s.offsetHeight : g.scrollHeight;
+        g.style.overflow = "hidden";
+        anim = g.animate([{ height: da + "px", opacity: chiudi ? 1 : 0.6 }, { height: a + "px", opacity: 1 }], { duration: 380, easing: "cubic-bezier(.16,.84,.24,1)" });
+        anim.onfinish = () => { if (chiudi) g.open = false; g.style.overflow = ""; anim = null; };
+        anim.oncancel = () => { g.style.overflow = ""; };
+      });
+    });
+    // una linea sottile di avanzamento dello scorrimento sotto la barra del menù
+    const nav = d.querySelector(".pagina-barra nav");
+    if (nav) {
+      const linea = d.createElement("span"); linea.className = "avanza"; linea.setAttribute("aria-hidden", "true"); nav.appendChild(linea);
+      let in_coda = false;
+      const posa = () => { in_coda = false; const h = d.documentElement.scrollHeight - w.innerHeight;
+        linea.style.transform = "scaleX(" + (h > 0 ? Math.min(1, Math.max(0, w.scrollY / h)) : 0).toFixed(4) + ")"; };
+      w.addEventListener("scroll", () => { if (!in_coda) { in_coda = true; w.requestAnimationFrame(posa); } }, { passive: true });
+      posa();
+    }
+    // crash test: quando il Rapporto e' pronto (la cornice non e' piu' nascosta) la cornice entra con il suo movimento
+    const rap = d.getElementById("rapporto");
+    if (rap && "MutationObserver" in w) {
+      const mo = new w.MutationObserver(() => { if (!rap.hidden) { rap.classList.remove("cornice-entra"); void rap.offsetWidth; rap.classList.add("cornice-entra"); } });
+      mo.observe(rap, { attributes: true, attributeFilter: ["hidden"] });
+    }
+  }
   if ("onpagereveal" in w) return;                // transizioni fra documenti del browser: bastano quelle del CSS
   d.addEventListener("click", (e) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
