@@ -450,6 +450,7 @@
                   const px = (x, tot) => (/%$/.test(x) ? parseFloat(x) / 100 * tot : parseFloat(x) * dpr) || 0;
                   visibile = [px(q[3], W), px(q[0], H), W - px(q[1], W), H - px(q[2], H)];
               };
+              const vicinoEtichetta = (x, y, m) => escluse.some((r) => x > r[0] - m && x < r[2] + m && y > r[1] - m && y < r[3] + m);
               const sopraEtichetta = (x, y, m) => escluse.some((r) => x > r[0] - m && x < r[2] + m && y > r[1] - m && y < r[3] + m)
                   || !!(visibile && (x < visibile[0] + m || x > visibile[2] - m || y < visibile[1] + m || y > visibile[3] - m));
               const etichetta = (testo, x, y, col, a, allinea) => {
@@ -538,88 +539,17 @@
                   }
                   coda.length = 0;
               };
-              // S5 (25/11): ogni anello si disegna UNA volta su una tela fuori schermo (si rifa' solo se cambiano testo, raggio oltre il 2%,
-              // grandezza delle lettere o colore) e a ogni fotogramma si ruota l'immagine con drawImage: a regime 0 fillText. Le parole vicino
-              // alle etichette sfumano (maschera morbida) invece di sparire di colpo; con S2 nessuna parola si toglie per il bordo
-              const spriteAn = [];
-              const glifi = new Map();
-              const glifo = (ch, f, px, col) => {
-                  const k = ch + '|' + f + '|' + col[0] + ',' + col[1] + ',' + col[2];
-                  let g = glifi.get(k);
-                  if (g)
-                      return g;
-                  if (glifi.size > 4000)
-                      glifi.clear();
-                  const S = Math.ceil(px * 1.8) + 2, c = doc.createElement('canvas');
-                  c.width = S;
-                  c.height = S;
-                  const x = c.getContext('2d');
-                  x.font = f;
-                  fontStretta(x);
-                  x.textAlign = 'center';
-                  x.textBaseline = 'middle';
-                  x.fillStyle = rgba(col, 1);
-                  x.fillText(ch, S / 2, S / 2);
-                  g = { c, m: S / 2 };
-                  glifi.set(k, g);
-                  return g;
-              };
-              win.__spriteRifatti = win.__spriteRifatti || 0;
-              const spriteAnello = (j, an, testo, rad, fs, col) => {
-                  const key = testo + '|' + fs.toFixed(1) + '|' + col.join(',') + '|' + dpr;
-                  const c0 = spriteAn[j];
-                  if (c0 && c0.key === key && Math.abs(c0.rad - rad) / Math.max(1, rad) < 0.02)
-                      return c0;
-                  const S = Math.ceil(2 * (rad + fs * 1.3)) + 4;
-                  const cv = c0 ? c0.cv : doc.createElement('canvas');
-                  cv.width = S;
-                  cv.height = S;
-                  const g = cv.getContext('2d');
-                  g.clearRect(0, 0, S, S);
-                  g.font = '500 ' + fs.toFixed(1) + 'px ' + fm();
-                  fontStretta(g);
-                  g.textAlign = 'center';
-                  g.textBaseline = 'middle';
-                  g.fillStyle = rgba(col, 1);
-                  const nT = testo.length, nUsa = nT ? (Math.floor(an.n / nT) * nT || an.n) : an.n, m = S / 2;
-                  let i = 0;
-                  while (i < nUsa) {
-                      if (testo[i % nT] === ' ') {
-                          i++;
-                          continue;
-                      }
-                      let fine = i;
-                      while (fine < nUsa && testo[fine % nT] !== ' ')
-                          fine++;
-                      const frM = (i + fine - 1) / 2 / an.n;
-                      const salta = ((frM - an.g0 + 1) % 1) < an.gw || !!(an.gw1 && ((frM - an.g1 + 1) % 1) < an.gw1);
-                      for (let k = i; k < fine && !salta; k++) {
-                          const th = (k / an.n) * Math.PI * 2, r = th + Math.PI / 2, co = Math.cos(r), si = Math.sin(r);
-                          g.setTransform(co, si, -si, co, m + Math.cos(th) * rad, m + Math.sin(th) * rad);
-                          g.fillText(testo[k % nT], 0, 0);
-                      }
-                      i = fine;
-                  }
-                  g.setTransform(1, 0, 0, 1, 0, 0);
-                  win.__spriteRifatti++;
-                  return (spriteAn[j] = { cv, key, rad, S });
-              };
+              // T1 (25/11): gli anelli come a 36d8559. Unica correzione: una parola che tocca il bordo del riquadro non si toglie piu' intera
+              // (il bordo la taglia da se'); vicino a un'etichetta la parola sfuma in 300 ms invece di sparire di colpo
+              const sfumaAn = [];
+              let tSfuma = 0, anelliDisegnati = 0;
               const disegnaAnelli = (cx, cy, R, t, zoom, alfa, col, ass, diag, jv, testoStato) => {
                   aggiornaEscluse(t);
+                  const dS = tSfuma ? Math.min(0.1, Math.max(0, (t - tSfuma) / 1000)) : 0;
+                  tSfuma = t;
+                  anelliDisegnati = 0;
                   ctx.textAlign = 'center';
                   ctx.textBaseline = 'middle';
-                  // S5: a regime (anelli composti) gli anelli passano dalle immagini, su uno strato da cui le etichette tolgono la loro zona sfumata
-                  const regime = ass >= 0.999;
-                  let usati = 0;
-                  if (regime) {          // le zone delle etichette escluse con un ritaglio (le parole ci scorrono sotto, non spariscono intere)
-                      ctx.save();
-                      ctx.beginPath();
-                      ctx.rect(0, 0, W, H);
-                      for (const r of escluse)
-                          ctx.rect(r[0] - 6 * dpr, r[1] - 6 * dpr, r[2] - r[0] + 12 * dpr, r[3] - r[1] + 12 * dpr);
-                      ctx.clip('evenodd');
-                  }
-                  const sctx = ctx;
                   for (let j = 0; j < anelli.length; j++) {
                       const an = anelli[j];
                       const multi = j === 0 ? 1 : 1 - (jv || 0);
@@ -631,30 +561,8 @@
                       const a0 = alfa * an.a * (1 - via) * multi;
                       if (a0 < 0.01)
                           continue;
-                      // S2 (25/11): ogni anello di testo tutto dentro il riquadro visibile (raggio + altezza del testo + 8 px entro il bordo
-                      // piu' vicino); un anello che non ci sta non si disegna, cosi' nessuna parola resta tagliata dal bordo
-                      {      // S2/S5: per tutte le tele un anello o sta tutto dentro il riquadro visibile o non si disegna
-                          const bx = visibile || [0, 0, W, H];
-                          const spazio = Math.min(cx - bx[0], bx[2] - cx, cy - bx[1], bx[3] - cy);
-                          if (rad + fs + 8 * dpr > spazio)
-                              continue;
-                          (win.__anelli = win.__anelli || {})[j] = { rad: rad / dpr, fs: fs / dpr, spazio: spazio / dpr, t: Math.round(win.performance.now()) };
-                      }
+                      anelliDisegnati++;
                       const testo = j === 0 && testoStato && jv > 0.5 ? testoStato : an.testo;
-                      if (regime && testo.length) {
-                          const sp = spriteAnello(j, an, testo, rad, fs, col);
-                          const sc = rad / sp.rad, giroI = t * 0.001 * an.v * (j === 0 && jv > 0.5 ? 1.6 : 1);
-                          sctx.save();
-                          sctx.globalAlpha = a0;
-                          sctx.translate(cx, cy);
-                          sctx.rotate(giroI);
-                          if (sc !== 1)
-                              sctx.scale(sc, sc);
-                          sctx.drawImage(sp.cv, -sp.S / 2, -sp.S / 2);
-                          sctx.restore();
-                          usati++;
-                          continue;
-                      }
                       ctx.font = '500 ' + fs.toFixed(1) + 'px ' + fm();
                       fontStretta(ctx);
                       const giro = t * 0.001 * an.v * (j === 0 && jv > 0.5 ? 1.6 : 1);
@@ -675,6 +583,7 @@
                               fine++;
                           const frM = (i + fine - 1) / 2 / an.n;
                           let salta = ((frM - an.g0 + 1) % 1) < an.gw || !!(an.gw1 && ((frM - an.g1 + 1) % 1) < an.gw1);
+                          let vicina = false;
                           pos.length = 0;
                           for (let k = i; k < fine && !salta; k++) {
                               const h = an.h[k];
@@ -686,18 +595,24 @@
                               const rr = rad * (1 + (1 - ai) * (h * 2.2 - 0.5));
                               const x = cx + Math.cos(th) * rr;
                               const y = cy + Math.sin(th) * rr;
-                              if (ai > 0.01 && (sopraEtichetta(x, y, fs * 0.7) || x < fs * 0.6 || x > W - fs * 0.6 || y < fs * 0.6 || y > H - fs * 0.6))
-                                  salta = true;           // sopra un'etichetta o tagliata dal bordo: via la parola intera
+                              if (ai > 0.01 && vicinoEtichetta(x, y, fs * 0.7))
+                                  vicina = true;          // T1: solo le etichette contano (il bordo taglia da se'), e la parola sfuma
                               pos.push([k, th, x, y, ai]);
                           }
+                          const sf = sfumaAn[j] || (sfumaAn[j] = new Float32Array(an.n + 1).fill(1));
+                          const iw = i;
+                          sf[iw] += ((vicina ? 0 : 1) - sf[iw]) * (dS > 0 ? Math.min(1, dS / 0.3) : 1);
                           i = fine;
-                          if (salta)
+                          if (salta || sf[iw] < 0.02)
                               continue;
+                          const fW = sf[iw];
+                          if (win.__misuraParole && cfg.nome === 'apertura')      // T1: solo per le prove, le parole disegnate in questo fotogramma
+                              (win.__paroleF = win.__paroleF || {})[j + ':' + iw] = fW;
                           for (const q of pos) {
                               const k = q[0], th = q[1], x = q[2], y = q[3], ai = q[4];
                               if (ai <= 0.01 || x < -fs || x > W + fs || y < -fs || y > H + fs)
                                   continue;
-                              const aa = Math.round(a0 * ai * 40) / 40;
+                              const aa = Math.round(a0 * ai * fW * 40) / 40;
                               if (aa !== colA) {
                                   ctx.fillStyle = rgba(col, aa);
                                   colA = aa;
@@ -711,10 +626,8 @@
                       }
                       ctx.setTransform(1, 0, 0, 1, 0, 0);
                   }
-                  if (regime)
-                      ctx.restore();
                   if (cfg.nome === 'metodo')
-                      win.__anelliMetodo = usati;
+                      win.__anelliMetodo = anelliDisegnati;
               };
               const esterno = (st, t, dt, k) => {
                   const cx = st.cx * W;
@@ -939,20 +852,9 @@
                           fa = f;
                       }
                       const ch = c.ci > 0.5 ? '?' : SEGNI[(q.g + Math.floor(t / (jv > 0.5 && (st.luce || 0) > 0.5 ? 180 : 2300) + q.f * 13)) % SEGNI.length];
-                      // S5 (25/11): le lettere della sfera da un archivio di glifi (ogni lettera, grandezza e colore disegnata una volta)
-                      const cg = c.ci > 0.5 ? COL.nebbia : v[2], al = v[1] * (c.ci > 0.5 ? 0.8 : 1);
-                      if (al < 0.005)
-                          return;
-                      if (!cfg.glifi) {        // dove l'archivio non conviene (misurato: «Come lo misuriamo») resta il testo diretto
-                          ctx.fillStyle = rgba(cg, al);
-                          ctx.fillText(ch, o.X, o.Y);
-                          return;
-                      }
-                      const gl = glifo(ch, f, px, cg);
-                      ctx.globalAlpha = al > 1 ? 1 : al;
-                      ctx.drawImage(gl.c, o.X - gl.m, o.Y - gl.m);
+                      ctx.fillStyle = rgba(c.ci > 0.5 ? COL.nebbia : v[2], v[1] * (c.ci > 0.5 ? 0.8 : 1));
+                      ctx.fillText(ch, o.X, o.Y);
                   });
-                  ctx.globalAlpha = 1;
                   if (jv > 0.01) {
                       if (pv) {
                           const davanti = [];
@@ -1069,10 +971,11 @@
                               const jv = jvS;
                               const att = st.sat === s.n ? 1 : 0;
                               sat[j] += (att - sat[j]) * (st.subito ? 1 : 1 - Math.exp(-dt * 6));
-                              const x = cx + Math.cos(s.a) * dist;
-                              const y = cy + Math.sin(s.a) * dist;
-                              const x0 = cx + Math.cos(s.a) * R * 1.12;
-                              const y0 = cy + Math.sin(s.a) * R * 1.12;
+                              const aS = st.satAng ? st.satAng[j] : s.a;      // T3 (25/11): al telefono angoli piu' vicini alla verticale
+                              const x = cx + Math.cos(aS) * dist;
+                              const y = cy + Math.sin(aS) * dist;
+                              const x0 = cx + Math.cos(aS) * R * 1.12;
+                              const y0 = cy + Math.sin(aS) * R * 1.12;
                               ctx.lineWidth = (1 + sat[j]) * dpr;
                               ctx.setLineDash(sat[j] > 0.5 ? [] : [2 * dpr, 4 * dpr]);
                               ctx.strokeStyle = rgba(sat[j] > 0.05 ? mescolaCol(col, COL.segnale, sat[j]) : col, (0.22 + 0.6 * sat[j]) * jv);
@@ -1094,10 +997,10 @@
                               ctx.arc(x, y, 4.5 * dpr, 0, Math.PI * 2);
                               ctx.fill();
                               ctx.stroke();
-                              const sopra = Math.sin(s.a) < 0;
+                              const sopra = Math.sin(aS) < 0;
                               etichetta(SAT_ETI[s.n] || '', x, y + (sopra ? -16 : 17) * dpr, sat[j] > 0.05 ? mescolaCol(col, COL.segnale, sat[j]) : COL.nebbia, (0.55 + 0.45 * sat[j]) * jv, 'center');
                               if (win.__misuraEti)            // N6 (25/11): solo per le prove, dove cadono le etichette (px CSS)
-                                  (win.__etiSat = win.__etiSat || {})[s.n] = { x: x / dpr, w: ctx.measureText(SAT_ETI[s.n] || '').width / dpr, W: ctx.canvas.width / dpr };
+                                  (win.__etiSat = win.__etiSat || {})[s.n] = { x: x / dpr, y: y / dpr, d: dist / dpr, w: ctx.measureText(SAT_ETI[s.n] || '').width / dpr, W: ctx.canvas.width / dpr };
                           });
                       if (st.filo && st.filoA > 0.01) {
                           const tx = st.filo.x * dpr, ty = st.filo.y * dpr;
@@ -2339,7 +2242,7 @@
           const cores = {};
           qq('[data-core]').forEach((c) => {
               const tipo = c.getAttribute('data-core');
-              cores[tipo] = creaCore(c, { nome: tipo, glifi: tipo !== 'metodo', anelliDentro: tipo === 'apertura', anelli: tipo === 'metodo' ? ANELLI_PICCOLI : tipo === 'apertura' ? ANELLI_GRANDI : [], ang0: tipo === 'finale' ? 2.2 : 0.7, dprMax: tipo === 'metodo' ? 2 : 1.5 });
+              cores[tipo] = creaCore(c, { nome: tipo, anelli: tipo === 'metodo' ? ANELLI_PICCOLI : tipo === 'apertura' ? ANELLI_GRANDI : [], ang0: tipo === 'finale' ? 2.2 : 0.7, dprMax: tipo === 'metodo' ? 2 : 1.5 });
           });
           const campi = qq('[data-campo]').map(creaCampo);
           const cuciture = qq('[data-cucitura]').map((c) => creaCucitura(c, c.getAttribute('data-cucitura')));
@@ -4223,6 +4126,10 @@
                   return;
               avvisoTesto.textContent = msg;
               avvisoEl.classList.toggle('con-simula', !!simula);
+              if (!msg) {               // T3c (25/11): un avviso vuoto non apre una scheda vuota
+                  percorso.classList.remove('con-avviso');
+                  return;
+              }
               percorso.classList.add('con-avviso');
               if (timerNota)
                   win.clearTimeout(timerNota);
@@ -4983,6 +4890,8 @@
                   satAttivo = null;
                   avvisa('');
               }
+              else if (percorso && (percorso.classList.contains('pieno') || percorso.classList.contains('con-avviso')))
+                  pulisciPercorso();       // T3c (25/11): dopo una risposta finita nessun resto del percorso sopra il campo
               inCoda++;                 // U3: un'apertura in coda viene annullata dalla chiusura
               if (scena && scena.aperta) {
                   scena.chiudi(subito === true);
@@ -6187,7 +6096,8 @@
           // sopra la tastiera (visualViewport), la pagina non salta e la sfera si riduce nello spazio sopra il modulo
           const tast = { on: false, y0: 0, q: 0, kb: -1, tieni: 0, h0: 0, eraAperta: false };
           const geoN6 = { t: -1e9, W: 0, H: 0, barra: 64, modulo: 0 };
-          let distSatF = 1.45;
+          let distSatF = 1.45, satAngF = null;
+          const SAT_TEL = [-2.2, -0.94, 2.2, 0.94];      // METODO, DATI, EVIDENZE, VERIFICATORE (stesso ordine di SATELLITI)
           // N2 (25/11): la tenuta vale solo con la tastiera davvero aperta (visualViewport ridotto, o finestra accorciata di oltre 100 px)
           const tastAperta = () => { if (!tast.on) return false; const vv = win.visualViewport;
               const kb = vv ? win.innerHeight - vv.height - vv.offsetTop : 0;
@@ -6731,7 +6641,8 @@
                   if (r.bottom > 0 && r.top < H) {
                       if (!st) {
                           // G1 (25/11): con il movimento l'ultimo tratto di 0,7 schermi della pista e' quello del foglio che sale
-                          const corsa = Math.max(1, r.height - H - (fermo ? 0 : 0.7 * H));
+                          // T2 (25/11): dopo l'entrata di tutto il blocco del 34% mezzo schermo fermo e intero, poi il foglio (0,7 schermi)
+                          const corsa = Math.max(1, r.height - H - (fermo ? 0 : 1.2 * H));
                           qR = morbido(qR, lim(-r.top / corsa));
                           segnaPazienti(Math.floor(lim(qR / 0.8) * celleP.length + 0.0001));
                       }
@@ -6850,6 +6761,7 @@
                       // N6 (25/11, telefono): sotto i 900 px, a core aperto, la sfera al centro dello spazio fra la barra e il modulo, con il
                       // diametro minore fra il 78% della larghezza e il 70% di quello spazio, e le etichette dei satelliti dentro lo schermo
                       distSatF = st ? 1.45 : 1.62;
+                      satAngF = null;
                       if (st && formCore && !tastAperta()) {
                           const kN = facile(lim((sp - 0.5) / 0.5));
                           if (kN > 0) {
@@ -6858,12 +6770,27 @@
                                   geoN6.modulo = formCore.getBoundingClientRect().top; geoN6.t = t; geoN6.W = Wv; geoN6.H = H;
                               }
                               const spazio = Math.max(120, geoN6.modulo - geoN6.barra - 8);
-                              const mezzaEti = 44, dentro = (Wv / 2 - mezzaEti - 8) / 0.82;      // 0,82 = coseno degli angoli dei satelliti
-                              const D = Math.min(0.78 * Wv, 0.70 * spazio, 2 * dentro / 1.22);
+                              const mezzaEti = 44, dentro = (Wv / 2 - mezzaEti - 8) / (Math.cos(0.94) * 1.3);      // T3: punti sulle diagonali a 1,3 R
+                              const D = Math.min(0.78 * Wv, 0.70 * spazio, 2 * dentro);
                               ccx += (0.5 - ccx) * kN;
                               ccy += ((geoN6.barra + 4 + spazio / 2) / H - ccy) * kN;
                               cR += (D / 2 - cR) * kN;
-                              distSatF = 1.45 + (Math.min(1.45, Math.max(1.22, dentro / Math.max(1, cR))) - 1.45) * kN;
+                              // T3: i quattro punti su una sola circonferenza appena fuori dalla sfera visibile (1,12 R), simmetrici, sulle diagonali
+                              // vicine alla verticale (etichette sopra e sotto): cosi' restano interi dentro lo schermo
+                              distSatF = 1.45 + (1.3 - 1.45) * kN;
+                              satAngF = kN > 0.5 ? SAT_TEL : null;
+                          }
+                      }
+                      // T3b (25/11): al telefono, finche' il percorso e' a schermo, punti ed etichette della sfera nascosti, sfera attenuata, e le
+                      // schede in colonna fra la barra e il modulo (mai sotto il modulo)
+                      const percorsoSu = !!(st && percorso && percorso.classList.contains('pieno'));
+                      if (percorsoSu !== root.classList.contains('percorso-a-schermo'))
+                          root.classList.toggle('percorso-a-schermo', percorsoSu);
+                      if (st && percorso && formCore) {
+                          const giu = Math.max(80, Math.round(H - formCore.getBoundingClientRect().top + 12)) + 'px';
+                          if (percorso.__giu !== giu) {
+                              percorso.__giu = giu;
+                              percorso.style.setProperty('--percorso-giu', giu);
                           }
                       }
                       if (!tastAperta() && tast.kb > 0 && formCore) { tast.kb = -1; formCore.style.transform = ''; }
@@ -6914,7 +6841,7 @@
                               jv, amp: ampV, lc, luce, scanY, vibra: 0,
                               sat: satAttivo, anello: anelloTesto, filo: st || qS > 0.05 ? null : (tf && fus && filo ? { x: fus.ax + fus.dx * tf.cv, y: fus.ay + fus.dy * tf.cv, k: filo.k } : filo), filoA, attivo: statoC !== 'pronta',
                               anelloMax: zg.ring, anelloK: sp,
-                              ascolto: micOn, impulsi: impulsiMic, impulsiP: impulsiTasti, distSat: distSatF,
+                              ascolto: micOn, impulsi: impulsiMic, impulsiP: impulsiTasti, distSat: distSatF, satAng: satAngF, senzaSat: root.classList.contains('percorso-a-schermo'),
                               gl: vivoGL, conto: statoC === 'da_inviare' ? contoFraz : 0, scena: qS > 0.01 ? { x: geo.sx, y: geo.sy, verticale: geo.verticale, q: qS } : null, verso: versoParola(), modo: figM, figCorta: figM > 0, tuffo: tf
                           }, t);
                       if (vivoGL && !dentroNucleo) {

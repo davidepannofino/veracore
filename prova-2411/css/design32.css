@@ -1245,3 +1245,26 @@ html.ingresso-chiuso,html.ingresso-chiuso body{overflow:hidden;overscroll-behavi
   @keyframes v32-esce{to{opacity:0}}
   @keyframes v32-entra{from{opacity:0}}
 }
+/* T2 (25/11): sotto i 900 px il foglio di «E con due campioni?» non sale piu' sopra «Il risultato»: sezioni una dopo l'altra. Sopra i 900 px
+   il blocco del 34% resta intero e fermo per mezzo schermo, poi il risultato svanisce nel primo terzo della salita del foglio (prima che il
+   foglio lo raggiunga): nessun testo del risultato e' mai coperto */
+@media (prefers-reduced-motion:no-preference) and (max-width:899px){
+  .pagina.modo-movimento .due-campioni{margin-top:0;border-radius:0}
+  .pagina.modo-movimento .due-campioni::after,.pagina.modo-movimento .due-campioni .foglio-linea{display:none}
+}
+@media (prefers-reduced-motion:no-preference) and (min-width:900px){
+  .pagina.modo-movimento .risultato{height:calc(var(--vh)*3.6)}
+  .pagina.modo-movimento .risultato .ris-fisso>.contenitore{opacity:1;transform:translateY(calc(var(--p,0) * var(--vh) * -.7))}
+}
+/* T2: sotto i 900 px il livello del risultato torna alto quanto il suo contenuto (la regola M2 dei livelli fissi, 100lvh, lo teneva alto
+   uno schermo: il contenuto, 1107 px a 390x664, usciva sopra e sotto e finiva sotto il foglio) */
+@media (max-width:899px){.risultato .ris-fisso{height:auto}}
+@media (max-width:899px){.pagina .risultato,.pagina.modo-movimento .risultato{padding-bottom:64px}}   /* T2: le «Fonti» in fondo al risultato non sporgono nella sezione dopo */
+/* T3b (25/11): al telefono il percorso (DOMANDA, FONTE, RISPOSTA, VERIFICATORE) mentre VERA pensa: schede a fondo pieno, in colonna fra la barra
+   e il modulo (--percorso-giu dal modulo vero), una scheda senza contenuto non si mostra; la sfera si attenua e i suoi punti si nascondono */
+@media (max-width:899px){
+  .percorso,.schermo-basso .percorso,.pagina .hud .percorso{top:72px;bottom:var(--percorso-giu,150px)}
+  .percorso .nodo{background:#16191c}
+  .percorso .nodo:has(> .nodo-testo:empty){display:none!important}
+  .pagina.percorso-a-schermo #core .stanza-core>canvas{opacity:.28!important;transition:opacity .3s}
+}
