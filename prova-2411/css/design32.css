@@ -62,7 +62,9 @@ body{margin:0;background:#F2F1EC}
 .chiedi-piu{width:44px;height:44px;border-radius:8px;display:grid;place-items:center;background:var(--carta-2);border:1px solid var(--linea);color:var(--ink);font:400 20px/1 var(--font-main);transition:background-color .15s var(--ease-standard)}
 
 .tuffo{position:relative;height:calc(var(--vh)*3);z-index:3}
-.tuffo-fisso{position:sticky;top:0;height:var(--vh);overflow:hidden;--buco:0px;-webkit-mask-image:radial-gradient(circle at 50% 50%,transparent calc(var(--buco) - 1px),#000 var(--buco));mask-image:radial-gradient(circle at 50% 50%,transparent calc(var(--buco) - 1px),#000 var(--buco))}
+.tuffo-fisso{position:sticky;top:0;height:var(--vh);overflow:hidden;--buco:0px}
+/* M1 (mattino 25/11): la maschera circolare solo mentre il buco si apre; a riposo nessuna mask-image */
+.tuffo-fisso.buco-aperto{-webkit-mask-image:radial-gradient(circle at 50% 50%,transparent calc(var(--buco) - 1px),#000 var(--buco));mask-image:radial-gradient(circle at 50% 50%,transparent calc(var(--buco) - 1px),#000 var(--buco))}
 .tuffo-fisso.passa{pointer-events:none}
 .tuffo-fisso.via{visibility:hidden}
 .tuffo-carta{position:absolute;inset:0;background:var(--paper)}
@@ -947,3 +949,22 @@ body.interne32 main>h1.titolo-pagina{border:0;padding:0}
 .video-etichette{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0}
 .video-nota{max-width:46ch;margin:0;color:var(--ink-2,inherit)}
 .vhud-basso .fonte+.fonte{margin-top:-6px}
+/* M2 (mattino 25/11): i livelli fissi coprono sempre lo schermo, anche quando la barra del browser si ritira (100lvh, con var(--vh)
+   come ripiego); testi e comandi ancorati in basso salgono della differenza fra schermo grande e piccolo (--giu = 100lvh - 100svh),
+   cosi' stanno dentro un riquadro alto 100svh e niente finisce sotto la barra del browser */
+.tuffo-fisso,.core-fisso,.ris-fisso,.video-fisso,.problema-sx{height:var(--vh);height:100lvh;--giu:0px;--giu:calc(100lvh - 100svh)}
+@media (min-width:900px){.passi-pista .passi:not(.classico *){height:var(--vh);height:100lvh}}
+.campo{height:var(--vh);height:100lvh;margin-bottom:calc(var(--vh)*-1);margin-bottom:-100lvh}
+.tuffo-testo,.finale-testo,.indizio,.angolo-fig,.vhud-basso,.finale-centro,.percorso,.comandi{margin-bottom:var(--giu,0px)}
+.racconto{height:100%;height:100dvh}
+/* M5 (mattino 25/11): «Torna al Neural Core» si vede da quando la risposta si apre, dentro lo schermo visibile; la riga della prova
+   resta nascosta finche' la risposta non e' finita */
+.racconto:not([data-modo="chiuso"]) .rc-piede{opacity:1;visibility:visible;transform:none;transition-delay:0s;padding-bottom:max(var(--space-3),env(safe-area-inset-bottom))}
+.racconto:not([data-modo="fine"]):not(.intero) .rc-prova{opacity:0;visibility:hidden}
+/* M6 (mattino 25/11): ogni passo resta fermo e leggibile per il 90% dell'altezza dello schermo di scorrimento: la pista e' la lista
+   fissa piu' sei corse da 0,9 schermi (la regola «altezza della sezione invariata» e' ritirata); l'opacita' dei passi la da' la corsa
+   (dissolvenza incrociata in una fascia breve), non piu' una transizione a tempo; la tacca del passo attivo si riempie con la corsa */
+.modo-movimento .passi-pista{height:calc(var(--vh)*6.4);height:calc(100lvh + var(--vh)*5.4)}
+.modo-movimento .passi-pista .passo{transition:none}
+.passo-tacche i.ora{background:linear-gradient(90deg,var(--accent) calc(var(--av,1)*100%),rgba(236,237,232,.18) 0)}
+@media (max-width:899px){.modo-movimento .passi-pista{height:calc(var(--vh)*5.84)}}

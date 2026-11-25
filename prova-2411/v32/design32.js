@@ -37,6 +37,7 @@
       coda: 500,
       domanda: 600,
       respiro: 700,
+      respiroVoce: 300,      // M4 (mattino 25/11): con la voce accesa la risposta parte prima (sempre dopo la domanda comparsa)
       scorri: 700,
       tracciato: 1250,
       copiata: 1600
@@ -2393,12 +2394,19 @@
           const tastoVoce = q1('[data-voce-toggle]');
           const voceEti = q1('[data-voce-eti]');
           const voceEl = q1('[data-voce-vera]');
-          // N1.7: la prima volta il tasto della voce dice anche «Attiva la voce»
+          // M4 (mattino 25/11): la voce e' accesa per impostazione predefinita, spenta solo se la persona l'ha spenta (ricordato in
+          // ncb.voce.on); il tasto dice subito «Voce accesa», e «Attiva la voce» compare solo dopo averla spenta
+          const PREF_VOCE = 'ncb.voce.on';
+          let voceSpentaPrima = false;
           try {
-              if (voceEti && !win.localStorage.getItem('ncb.voce.v1') && (PC.voce || {}).attiva)
-                  voceEti.textContent = PC.voce.attiva;
+              voceSpentaPrima = win.localStorage.getItem(PREF_VOCE) === '0';
           }
           catch (e) { }
+          const tastoVoce0 = q1('[data-voce-toggle]');
+          if (tastoVoce0)
+              tastoVoce0.setAttribute('aria-pressed', voceSpentaPrima ? 'false' : 'true');
+          if (voceEti)
+              voceEti.textContent = String((PC.voce || {})[voceSpentaPrima ? 'attiva' : 'accesa'] || voceEti.textContent);
           this._voce = voceEl;
           const modVoce = q1('[data-mod-voce]');
           const modAscolto = q1('[data-mod-ascolto]');
@@ -2543,6 +2551,8 @@
               const RE2 = 73.4162;
               // N1.5 (notte 25/11): i livelli del suono, tarati con la misura sull'uscita (livelli32.mjs)
               const SUONO_K = 0.029 * 6.6, SUONO_ARIA = 0.16, SUONO_UI = 0.55 * 2.4, SUONO_CLIC = 0.2;
+              // M3 (mattino 25/11): tutto piu' basso, stesso timbro (un solo fattore sull'uscita): ambiente tra -38 e -34 dBFS RMS, clic 0,06-0,10
+              const SUONO_GIU = 0.4;
               const hz = (semi) => RE2 * Math.pow(2, semi / 12);
               const ora = () => (ctx ? ctx.currentTime : 0);
               const verso = (p, v, t0, tau) => { try {
@@ -2767,7 +2777,7 @@
                   }
                   derivaFino = t;
               };
-              const livelloMaster = () => (acceso && !nascosto ? vol * vol : 0);
+              const livelloMaster = () => (acceso && !nascosto ? vol * vol * SUONO_GIU : 0);
               const livelloCore = () => {
                   const base = { pronta: 0.55, ascolto: 0.8, trascrivo: 0.7, da_inviare: 0.7, inviata: 0.85, parla: 0.6 }[stato] || 0.55;
                   return 0.011 * presenza * base;
@@ -2915,7 +2925,7 @@
                       catch (e) { }
                       acceso = true;
                       const t = ora();
-                      verso(n.master.gain, livelloMaster(), t, 0.9);
+                      verso(n.master.gain, livelloMaster(), t, 1.0);      // M3: dissolvenza di circa 3 s
                       aggiornaCore();
                       avviaTimer();
                       EV.attiva(t + 0.02);
@@ -3670,7 +3680,7 @@
                   get dentro() { if (!aperta)
                       return false; if (strato())
                       return tuffo.p > 0.6; const r = sez.getBoundingClientRect(); return r.top < altezza() * 0.6 && r.bottom > 0; },
-                  attesa() { return strato() && aperta ? tuffo.attesa() + (fermo ? 0 : TEMPI_RC.domanda + TEMPI_RC.respiro) : 700; },
+                  attesa() { return strato() && aperta ? tuffo.attesa() + (fermo ? 0 : TEMPI_RC.domanda + (root.__voceAccesa ? TEMPI_RC.respiroVoce : TEMPI_RC.respiro)) : 700; },
                   didascalia() { },
                   rect() { return sez.getBoundingClientRect(); },
                   apri(d, o) {
@@ -3784,7 +3794,7 @@
           const etiSuono = q1('[data-suono-eti]');
           const volSuono = q1('[data-suono-vol]');
           const gusSuono = q1('.nav-suono-guscio');
-          const prefSuono = Object.assign({ on: false, vol: 0.6 }, leggiPref() || {});
+          const prefSuono = Object.assign({ on: true, vol: 0.6 }, leggiPref() || {});      // M3: acceso se non l'hai spento
           let timerPannello = 0;
           const mostraSuono = (stato) => {
               if (!tastoSuono)
@@ -3843,8 +3853,29 @@
           ascolta(doc, 'click', riprendiAudio, { passive: true, capture: true });
           const spegniSuono = () => { suono.spegni(); prefSuono.on = false; salvaPref(prefSuono); mostraSuono('spento'); if (gusSuono)
               gusSuono.classList.remove('mostra'); };
-          // niente avvio da solo: se l'avevi acceso in una visita precedente il tasto dice «Riprendi» e aspetta il tuo clic
-          mostraSuono(prefSuono.on ? 'riprendi' : 'spento');
+          // M3 (mattino 25/11): il suono e' acceso per impostazione predefinita (spento solo se l'hai spento: la scelta si ricorda). Parte
+          // al caricamento se il browser lo permette, altrimenti al primo tocco, clic o tasto in qualunque punto, con 3 s di dissolvenza;
+          // il tasto mostra subito lo stato acceso e serve a spegnere. Anche i suoni dei tasti sono attivi dal primo gesto
+          mostraSuono(prefSuono.on ? 'acceso' : 'spento');
+          if (prefSuono.on) {
+              try {
+                  suono.accendi();
+              }
+              catch (e) { }
+          }
+          let primoGesto = true;
+          const avviaDalGesto = (e) => {
+              if (!prefSuono.on || (e && e.target && e.target.closest && e.target.closest('[data-suono-tasto]') && suono.acceso && actx && actx.state === 'running'))
+                  return;
+              if (!suono.acceso)
+                  suono.accendi();
+              riprendiAudio();
+              if (primoGesto) {
+                  primoGesto = false;
+                  controllaSuono();
+              }
+          };
+          ['pointerdown', 'touchend', 'click', 'keydown'].forEach((ev) => ascolta(doc, ev, avviaDalGesto, { capture: true, passive: true }));
           if (volSuono)
               ascolta(volSuono, 'input', () => { const v = Number(volSuono.value) / 100; suono.volume(v); prefSuono.vol = v; salvaPref(prefSuono); mostraPannello(); });
           // la voce del servizio (vera_voce.js) abbassa il suono come la voce preparata
@@ -3876,7 +3907,8 @@
           const ANELLO_BASE = ANELLO('pronta');
           const VEL_MUTO = 1.7;
           let CATALOGO = null;
-          let voceAttiva = false;
+          let voceAttiva = !voceSpentaPrima && !!q1('[data-voce-toggle]');
+          root.__voceAccesa = voceAttiva;
           let statoC = 'pronta';
           let satAttivo = null;
           let anelloTesto = ANELLO_BASE;
@@ -3922,6 +3954,7 @@
                       return;
                   actx = new AC();
                   this._actx = actx;
+                  root.__actx = actx;      // M3: per la prova dello stato del contesto
                   // N1.5: iOS puo' interrompere il suono (una chiamata, un altro audio): il tasto lo dice e si riprende al tocco
                   actx.addEventListener('statechange', () => {
                       if (!suono.acceso)
@@ -4039,6 +4072,33 @@
               }
               catch (e) { }
           };
+          // M4: nel gesto che manda la domanda l'elemento parte muto con l'audio della risposta e si ferma subito: e' sbloccato
+          // (iOS) e gia' caricato; la voce poi parte quando la domanda ha finito di comparire, senza altri tocchi
+          const sbloccaCon = (url) => {
+              if (!voceEl || !url)
+                  return;
+              try {
+                  precaricaVoce(url);
+                  voceEl.muted = true;
+                  const pr = voceEl.play();
+                  voceEl.dataset.sbloccato = '1';
+                  const torna = () => { try {
+                      if (voceEl.muted) {
+                          voceEl.pause();
+                          voceEl.currentTime = 0;
+                          voceEl.muted = false;
+                      }
+                  }
+                  catch (e) { } };
+                  if (pr && pr.then)
+                      pr.then(torna, () => { voceEl.muted = false; });
+                  else
+                      torna();
+              }
+              catch (e) {
+                  voceEl.muted = false;
+              }
+          };
           const partiVoce = (c) => {
               c.attesa = false;
               c.inizio = win.performance.now();
@@ -4049,6 +4109,7 @@
               }
               let pr = null;
               try {
+                  voceEl.muted = false;
                   voceEl.currentTime = 0;
                   pr = voceEl.play();
               }
@@ -4292,8 +4353,14 @@
               } }, 2600);
           };
           const chiediVera = (testo, id, via) => {
-              if (id && voceAttiva && AUDIO[id] && AUDIO[id].file)     // N1.7: l audio parte gia dal tocco sulla domanda
-                  precaricaVoce(AUDIO[id].file);
+              if (id && voceAttiva && AUDIO[id] && AUDIO[id].file)     // N1.7 e M4: l audio si sblocca e si carica gia nel tocco sulla domanda
+                  sbloccaCon(AUDIO[id].file);
+              else if (voceAttiva)
+                  sbloccaVoce();
+              if (voceAttiva) {
+                  voceServizio(true);
+                  preparaAudio();
+              }
               if (!CATALOGO) {
                   avvisa((PAROLE.stati_js || {}).caricamento || '');
                   return;
@@ -4343,17 +4410,18 @@
           };
           const cambiaVoce = () => {
               voceAttiva = !voceAttiva;
+              root.__voceAccesa = voceAttiva;
               voceServizio(false);
               if (tastoVoce)
                   tastoVoce.setAttribute('aria-pressed', voceAttiva ? 'true' : 'false');
               if (voceEti)
-                  voceEti.textContent = ((PC.voce || {})[voceAttiva ? 'accesa' : 'spenta']) || '';
+                  voceEti.textContent = ((PC.voce || {})[voceAttiva ? 'accesa' : 'attiva']) || '';
+              try {
+                  win.localStorage.setItem(PREF_VOCE, voceAttiva ? '1' : '0');      // M4: la scelta si ricorda
+              }
+              catch (e) { }
               if (voceAttiva) {
                   sbloccaVoce();
-                  try {
-                      win.localStorage.setItem('ncb.voce.v1', '1');
-                  }
-                  catch (e) { }
                   preparaAudio();
                   try {
                       if (actx && actx.state === 'suspended')
@@ -4427,7 +4495,51 @@
               }
               return false;
           };
-          ascolta(root, 'keydown', (e) => { if (e.key === 'Escape' && ferma())
+          // M5 (mattino 25/11): «Torna al Neural Core» ed Esc chiudono sempre, in qualunque momento: fermano voce e testo e riportano
+          // al campo della domanda («Testo intero» resta solo nel menù)
+          const chiudiRisposta = () => {
+              const aperta = !!((scena && scena.aperta) || clip || statoC !== 'pronta');
+              genV++;
+              try {
+                  if (clip && clip.pausa)
+                      riprendiClip();
+              }
+              catch (x) { }
+              try {
+                  fermaSuono();
+                  fermaClip();
+              }
+              catch (x) { }
+              clip = null;
+              try {
+                  fermaVoceServizio();
+              }
+              catch (x) { }
+              try {
+                  if (voceEl && !voceEl.paused)
+                      voceEl.pause();
+              }
+              catch (x) { }
+              suono.voce(false);
+              mostraRigaVoce(false);
+              if (statoC !== 'pronta') {
+                  pulisciPercorso();
+                  impostaStato('pronta');
+                  anelloTesto = ANELLO_BASE;
+                  satAttivo = null;
+                  avvisa('');
+              }
+              if (scena && scena.aperta)
+                  scena.chiudi(false);
+              if (inputCore) {
+                  try {
+                      inputCore.focus({ preventScroll: true });
+                  }
+                  catch (x) { }
+              }
+              return aperta;
+          };
+          ascolta(root, 'keydown', (e) => { if (e.key === 'Escape' && !elencoAperto() && chiudiRisposta())
               e.preventDefault(); });
           const fuocoAiComandi = (el) => { const a = doc.activeElement; if (inputCore && el && (a === el || !a || a === doc.body)) {
               try {
@@ -4824,14 +4936,7 @@
               }
               const scC = tgt.closest('[data-sc-chiudi]');
               if (scC) {
-                  if (clip) {
-                      if (clip.pausa)
-                          riprendiClip();
-                      ferma();
-                  }
-                  if (scena)
-                      scena.chiudi(false);
-                  fuocoAiComandi(scC);
+                  chiudiRisposta();      // M5: chiude sempre
                   return;
               }
               const scorri = tgt.closest('[data-sugg-scorri]');
@@ -4977,6 +5082,7 @@
               if (sblocca && voceAttiva)
                   VV.sblocca(sez);
           };
+          voceServizio(false);      // M4: la voce del servizio segue lo stato iniziale del tasto (accesa se non spenta)
           const fermaVoceServizio = () => { const sez = doc.querySelector('section.vera'); if (sez && win.VeraVoce && win.VeraVoce.ferma)
               win.VeraVoce.ferma(sez); };
           const inviaDalCampo = () => {
@@ -5221,6 +5327,7 @@
           let ultimoFilo = 0;
           let ultimoFermo = 0;
           let qA = 0;
+          const sicuro = (v, d) => (typeof v === 'number' && isFinite(v) ? v : d);      // M1: mai NaN o infinito negli stati
           let qV = 0;
           let qF = 0;
           let qR = 0;
@@ -5393,6 +5500,59 @@
           ogni(() => { rimisura(); if (dorme && !doc.hidden && daDisegnare(altezza()))
               sveglia(); }, 1000);
           this._sveglia = sveglia;
+          // M1 (mattino 25/11): controllo della prima schermata a 1 s e a 3 s, a ogni pageshow e al ritorno visibile: in cima alla
+          // pagina il testo deve vedersi, il livello fisso non e' nascosto e la sfera e' disegnata; altrimenti misure, stato e disegno
+          // si rifanno
+          const testoA = apertura ? apertura.querySelector('.tuffo-testo') : null;
+          const statoCima = (conSfera) => {
+              if (!apertura || !fissoA || statico || posizione() > 2)
+                  return true;
+              const op = testoA ? parseFloat(win.getComputedStyle(testoA).opacity) : 1;
+              const via = fissoA.classList.contains('via') || win.getComputedStyle(fissoA).visibility === 'hidden';
+              return !(sicuro(op, 0) < 0.9 || via || (conSfera && !apertura.classList.contains('sfera-disegnata')));
+          };
+          const rifaiCima = (conSfera) => {
+              if (statoCima(conSfera))
+                  return;
+              if (this._ridim)
+                  this._ridim(true);
+              qA = 0;
+              apertura.style.setProperty('--a', '0');
+              apertura.style.setProperty('--z', '0');
+              fissoA.style.setProperty('--buco', '0px');
+              fissoA.classList.remove('passa', 'via', 'buco-aperto');
+              if (cores.apertura && caratterePronto)
+                  apertura.classList.add('sfera-disegnata');
+              const fn = dorme || null;
+              dorme = false;
+              quiete = 0;
+              if (fn)
+                  win.requestAnimationFrame(fn);
+          };
+          win.setTimeout(() => rifaiCima(false), 1000);
+          win.setTimeout(() => rifaiCima(true), 3000);
+          ascolta(win, 'pageshow', () => rifaiCima(false));
+          ascolta(doc, 'visibilitychange', () => { if (!doc.hidden)
+              rifaiCima(false); });
+          // ?diag=1: tre letture (0,1 s, 1 s, 3 s) in un riquadro piccolo in basso, solo a schermo (niente inviato)
+          if (/[?&]diag=1(&|$)/.test(win.location.search || '')) {
+              const box = doc.createElement('pre');
+              box.setAttribute('aria-hidden', 'true');
+              box.style.cssText = 'position:fixed;left:6px;right:6px;bottom:6px;z-index:2147483647;margin:0;padding:6px 8px;max-height:46vh;overflow:auto;font:10px/1.35 monospace;white-space:pre-wrap;background:rgba(20,21,23,.88);color:#ECEDE8;border-radius:6px;pointer-events:none';
+              doc.body.appendChild(box);
+              const leggi = (eti) => {
+                  const vv = win.visualViewport;
+                  const op = testoA ? win.getComputedStyle(testoA).opacity : '-';
+                  box.textContent += eti + ' · ' + win.innerWidth + '×' + win.innerHeight + ' · vv ' + (vv ? Math.round(vv.height) : '-')
+                      + ' · stabile ' + hStabile + ' · --vh ' + root.style.getPropertyValue('--vh') + ' · scorr ' + Math.round(posizione())
+                      + ' · ' + doc.visibilityState + ' · q ' + sicuro(qA, NaN).toFixed(3) + ' · a ' + (apertura ? apertura.style.getPropertyValue('--a') : '-')
+                      + ' · buco ' + (fissoA ? fissoA.style.getPropertyValue('--buco') : '-') + ' · pagina [' + root.className + '] · fisso ['
+                      + (fissoA ? fissoA.className : '-') + '] · testo ' + op + '\n';
+              };
+              win.setTimeout(() => leggi('0,1 s'), 100);
+              win.setTimeout(() => leggi('1 s'), 1000);
+              win.setTimeout(() => leggi('3 s'), 3000);
+          }
           const ciclo = (t) => {
               if (this._fermo)
                   return;
@@ -5412,7 +5572,9 @@
               const Wv = larghezza();
               const diag = Math.hypot(Wv, H);
               const st = stretto();
-              const dt = ultimoT ? Math.min(0.05, (t - ultimoT) / 1000) : 0.016;
+              // M1 (mattino 25/11): ogni numero passa da un controllo; dt sempre tra 0,001 e 0,05
+              const dtG = ultimoT ? (t - ultimoT) / 1000 : 0.016;
+              const dt = Math.min(0.05, Math.max(0.001, isFinite(dtG) ? dtG : 0.016));
               ultimoT = t;
               const morbido = (cur, target) => (this._lenis || saltaMorbido ? target : cur + (target - cur) * (1 - Math.exp(-dt * 16)));
               let nascondi = false;
@@ -5421,22 +5583,27 @@
                   const r = apertura.getBoundingClientRect();
                   if (r.bottom > -10 && r.top < H + 10) {
                       const corsa = Math.max(1, r.height - H);
-                      qA = morbido(qA, lim(-r.top / corsa));
+                      // M1 (mattino 25/11): in cima alla pagina (scorrimento <= 2 px) la prima schermata e' per forza nello stato
+                      // iniziale; un valore non finito lascia l'ultimo valido
+                      const qN = posizione() <= 2 ? 0 : morbido(qA, lim(-r.top / corsa));
+                      qA = sicuro(qN, sicuro(qA, 0));
                       const q = qA;
-                      const a = facile(lim(q / 0.3));
-                      const z = facile(lim((q - 0.24) / 0.56));
-                      const hb = lim((q - 0.5) / 0.38);
+                      const a = sicuro(facile(lim(q / 0.3)), 0);
+                      const z = sicuro(facile(lim((q - 0.24) / 0.56)), 0);
+                      const hb = sicuro(lim((q - 0.5) / 0.38), 0);
                       apertura.style.setProperty('--a', a.toFixed(4));
                       apertura.style.setProperty('--z', z.toFixed(4));
                       if (st)
                           apertura.style.setProperty('--st', (60 * (1 - a)).toFixed(2) + '%');
                       else
                           apertura.style.setProperty('--sx', (50 * (1 - a)).toFixed(2) + '%');
-                      fissoA.style.setProperty('--buco', (Math.pow(hb, 1.7) * (diag / 2 + 60)).toFixed(1) + 'px');
+                      const buco = sicuro(Math.pow(hb, 1.7) * (diag / 2 + 60), 0);
+                      fissoA.style.setProperty('--buco', buco.toFixed(1) + 'px');
+                      fissoA.classList.toggle('buco-aperto', buco > 0);     // la maschera circolare solo mentre il buco si apre
                       fissoA.classList.toggle('passa', q > 0.62);
                       fissoA.classList.toggle('via', hb >= 1);
                       if (hb < 1 && caratterePronto) {
-                          const R0 = st ? Math.min(Wv, H) * 0.19 : Math.min(Wv * 0.5, H) * 0.2;
+                          const R0 = sicuro(st ? Math.min(Wv, H) * 0.19 : Math.min(Wv * 0.5, H) * 0.2, 120);
                           const rS = String(Math.round(R0 * (1 + 0.25 * a)));
                           if (apertura.dataset.sfera !== rS)
                               apertura.dataset.sfera = rS;      // il raggio disegnato della sfera (per le misure di B2)
@@ -5478,16 +5645,42 @@
                   if (rm.bottom > 0 && rm.top < H) {
                       // N2.1 (notte 25/11, bozza 2): i passi sono fermi uno sull'altro; quale e' attivo lo dice la corsa della pista
                       // (stessa lunghezza di prima, quindi lo scorrimento non cambia); si vede solo il passo attivo
-                      let att = -1;
-                      if (pistaPassi && passi.length) {
-                          const rp = pistaPassi.getBoundingClientRect();
-                          const soglia = H * (st ? 0.8 : 0.58);           // la stessa soglia dei passi di prima
-                          const q = (soglia - rp.top) / Math.max(1, rp.height - (H - soglia));   // 1 quando la pista finisce in fondo allo schermo
-                          if (rp.top < soglia)
-                              att = Math.max(0, Math.min(passi.length - 1, Math.floor(lim(q) * passi.length)));
+                      // M6 (mattino 25/11): la corsa della lista fissa (da quando si ferma a quando riparte) e' divisa in sei parti uguali;
+                      // ogni passo e' pieno nella sua parte, il cambio e' una dissolvenza incrociata in una fascia del 10% attorno al confine
+                      // (chi entra sale nel primo 60% della fascia, chi esce scende nell'ultimo 60%: mai un momento senza testo)
+                      let att = 0;
+                      if (pistaPassi && olPassi && passi.length) {
+                          const rp = pistaPassi.getBoundingClientRect(), ro = olPassi.getBoundingClientRect();
+                          const fermoDa = parseFloat(win.getComputedStyle(olPassi).top) || 0;      // dove la lista si ferma (0 o 56% dello schermo)
+                          const corsaP = Math.max(1, rp.height - ro.height);
+                          const u = sicuro(lim((fermoDa - rp.top) / corsaP), 0) * passi.length;
+                          const B = 0.1;
+                          const liscio = (x) => { const y = lim(x); return y * y * (3 - 2 * y); };
+                          let migliore = -1;
+                          passi.forEach((p, i) => {
+                              const entra = i === 0 ? 1 : liscio((u - (i - B / 2)) / (B * 0.6));
+                              const esce = i === passi.length - 1 ? 1 : 1 - liscio((u - (i + 1 - B / 2 + B * 0.4)) / (B * 0.6));
+                              const o = sicuro(Math.min(entra, esce), 0);
+                              const oS = o.toFixed(2), avS = lim(u - i).toFixed(2);
+                              if (p.__o !== oS) {          // si scrive solo quando cambia (niente ricalcolo degli stili a ogni giro)
+                                  p.__o = oS;
+                                  p.style.opacity = oS;
+                                  p.style.filter = o > 0.995 || o < 0.005 ? 'none' : 'blur(' + ((1 - o) * 8).toFixed(1) + 'px)';
+                                  p.style.transform = o > 0.995 ? 'none' : 'translateY(' + ((1 - o) * 8).toFixed(1) + 'px)';
+                                  p.style.visibility = o < 0.005 ? 'hidden' : '';
+                              }
+                              if (p.__av !== avS && o > 0.005) {
+                                  p.__av = avS;
+                                  p.style.setProperty('--av', avS);
+                              }
+                              if (o > migliore) {
+                                  migliore = o;
+                                  att = i;
+                              }
+                          });
                       }
-                      passi.forEach((p, i) => { p.classList.toggle('attivo', i === Math.max(0, att)); p.classList.toggle('spento', i !== Math.max(0, att)); });
-                      const modo = att >= 0 ? Number(passi[att].getAttribute('data-modo')) : 0;
+                      passi.forEach((p, i) => { p.classList.toggle('attivo', i === att); p.classList.toggle('spento', i !== att); });
+                      const modo = att >= 0 && passi[att] ? Number(passi[att].getAttribute('data-modo')) : 0;
                       if (cores.metodo && visibile(cores.metodo.tela, H)) {
                           const cw = cores.metodo.tela.clientWidth;
                           const chh = cores.metodo.tela.clientHeight;
@@ -5851,6 +6044,12 @@
           win.addEventListener('resize', this._ridim);
           if (doc.fonts && doc.fonts.ready)        // un ricalcolo dopo i caratteri, con le misure vere
               doc.fonts.ready.then(() => { if (this._ridim) this._ridim(true); });
+          // M2 (mattino 25/11): l'altezza stabile si rilegge a load, pageshow e ritorno visibile (oltre che ai caratteri pronti e al
+          // cambio di larghezza); mai durante lo scorrimento
+          const rileggi = () => { if (this._ridim && !doc.hidden) this._ridim(true); };
+          if (doc.readyState === 'complete') rileggi(); else win.addEventListener('load', rileggi, { once: true });
+          win.addEventListener('pageshow', rileggi);
+          doc.addEventListener('visibilitychange', rileggi);
       }
   }
 
