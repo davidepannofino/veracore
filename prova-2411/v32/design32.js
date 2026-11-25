@@ -14,7 +14,8 @@
   const PR = PAROLE.risposta || {};
   const PC = PAROLE.core || {};
   const PV = PAROLE.video || {};
-  const CAMPIONI = (PAROLE.metodo || {}).campioni || [];   // N2.1 (notte 25/11): «Campione 1» e «Campione 2» sulla figura del metodo
+  const CAMPIONI = (PAROLE.metodo || {}).campioni || [];
+  const ETI_FIG = (PAROLE.metodo || {}).etichette || {};   // F1 (25/11): le scritte delle guide della figura, solo con proposte.etichette_figura   // N2.1 (notte 25/11): «Campione 1» e «Campione 2» sulla figura del metodo
   const STATI = PC.stati || {};
   const VIA = PC.via || {};
   const SAT_ETI = PC.satelliti || {};
@@ -472,6 +473,7 @@
                   ctx.fillText(testo, x, y);
               };
               const coda = [];
+              const ostacoli = [];        // F1 (25/11): zone che una pillola con la guida non copre (anelli e punti arancioni)
               // U6 (ultimo giro 25/11): «Campione 1» e «Campione 2» si scrivono lettera per lettera quando compaiono (45 ms a lettera)
               let campDa = 0;
               const scriviCamp = (testo, a) => {
@@ -487,6 +489,9 @@
               };
               const pillola = (testo, x, y, col, a, allinea, accesa) => { if (a >= 0.02 && testo)
                   coda.push([testo, x, y, col, a, allinea || 'left', !!accesa]); };
+              // F1 (25/11): una pillola con la sua guida verticale dal punto (X, Y0); senza testo niente guida (mai una linea che porta a niente)
+              const guidata = (testo, X, Y0, verso, col, a) => { if (a >= 0.02 && testo)
+                  coda.push([testo, X, Y0 + verso * 40 * dpr, col, a, 'center', true, { X, Y0, verso }]); };
               const tondo = (x, y, w, h, r) => {
                   ctx.beginPath();
                   if (ctx.roundRect) {
@@ -503,21 +508,49 @@
               const svuotaCoda = () => {
                   if (!coda.length)
                       return;
-                  const fs = (W / dpr < 600 ? 12 : 14) * dpr;
+                  const fs0 = (W / dpr < 600 ? 12 : 14) * dpr;
                   const spazia = 'letterSpacing' in ctx;
-                  for (const v of coda) {
-                      const testo = v[0], x0 = v[1], y = v[2], col = v[3], a = v[4], al = v[5], accesa = v[6];
+                  const m0 = 10 * dpr, px = 8 * dpr;
+                  const misura = (testo, fs) => { ctx.font = '500 ' + Math.round(fs) + 'px ' + fm(); fontStretta(ctx);
+                      if (spazia) ctx.letterSpacing = (0.03 * fs).toFixed(1) + 'px'; const w = ctx.measureText(testo).width; if (spazia) ctx.letterSpacing = '0px'; return w; };
+                  const tocca = (q, r) => q.x < r.x + r.w && r.x < q.x + q.w && q.y < r.y + r.h && r.y < q.y + q.h;
+                  const posti = ostacoli.slice(), fatti = [];
+                  ostacoli.length = 0;
+                  // F1 (25/11): prima le pillole senza guida, poi quelle con la guida (che le evitano spostandosi lungo la guida)
+                  for (const v of coda.filter((x) => !x[7]).concat(coda.filter((x) => x[7]))) {
+                      const testo = v[0], x0 = v[1], al = v[5], g = v[7];
+                      let fs = fs0, lw = misura(testo, fs);
+                      if (g && lw + px * 2 > W - 2 * m0) { fs = 10 * dpr; lw = misura(testo, fs); }
+                      if (g && lw + px * 2 > W - 2 * m0) continue;          // non entra nemmeno a 10 px: niente pillola e niente guida
+                      const bh = fs + 10 * dpr;
+                      let x = al === 'right' ? x0 - lw : al === 'center' ? x0 - lw / 2 : x0;
+                      x = Math.max(m0 + px, Math.min(x, W - lw - px - m0));
+                      let y = v[2];
+                      if (g) {
+                          let k = 0;
+                          while (k < 6 && posti.some((r) => tocca({ x: x - px - 4 * dpr, y: y - bh / 2 - 4 * dpr, w: lw + 2 * px + 8 * dpr, h: bh + 8 * dpr }, r))) { y += g.verso * (bh + 8 * dpr); k++; }
+                          if (y - bh / 2 < m0 || y + bh / 2 > H - m0 || k >= 6) continue;            // fuori dalla tela: niente guida da sola
+                      }
+                      const r = { x: x - px, y: y - bh / 2, w: lw + 2 * px, h: bh };
+                      posti.push(r); fatti.push({ v, x, y, fs, lw, bh, r });
+                  }
+                  win.__pilloleFig = win.__pilloleFig || {};
+                  const reg = [];
+                  for (const f of fatti) {
+                      const testo = f.v[0], col = f.v[3], a = f.v[4], accesa = f.v[6], g = f.v[7], x = f.x, y = f.y, fs = f.fs, lw = f.lw, bh = f.bh;
+                      ctx.globalAlpha = Math.min(1, a);
+                      if (g) {          // la guida: dal punto al bordo della pillola, mai da sola
+                          ctx.lineWidth = 1 * dpr;
+                          ctx.strokeStyle = rgba(col, 0.75);
+                          ctx.beginPath();
+                          ctx.moveTo(g.X, g.Y0);
+                          ctx.lineTo(g.X, g.verso < 0 ? y + bh / 2 : y - bh / 2);
+                          ctx.stroke();
+                      }
                       ctx.font = '500 ' + Math.round(fs) + 'px ' + fm();
                       fontStretta(ctx);
                       if (spazia)
                           ctx.letterSpacing = (0.03 * fs).toFixed(1) + 'px';
-                      const lw = ctx.measureText(testo).width;
-                      const px = 8 * dpr;
-                      const bh = fs + 10 * dpr;
-                      const m0 = 10 * dpr;
-                      let x = al === 'right' ? x0 - lw : al === 'center' ? x0 - lw / 2 : x0;
-                      x = Math.max(m0 + px, Math.min(x, W - lw - px - m0));
-                      ctx.globalAlpha = Math.min(1, a);
                       ctx.fillStyle = 'rgba(11,13,16,0.88)';
                       tondo(x - px, y - bh / 2, lw + px * 2, bh, 3 * dpr);
                       ctx.fill();
@@ -536,7 +569,9 @@
                       if (spazia)
                           ctx.letterSpacing = '0px';
                       ctx.globalAlpha = 1;
+                      if (a > 0.5) reg.push({ testo, x: (x - px) / dpr, y: (y - bh / 2) / dpr, w: (lw + 2 * px) / dpr, h: bh / dpr, guida: g ? { x: g.X / dpr, y0: g.Y0 / dpr, verso: g.verso } : null });
                   }
+                  if (cfg.nome) win.__pilloleFig[cfg.nome] = { W: W / dpr, H: H / dpr, pillole: reg, t: win.performance.now() };
                   coda.length = 0;
               };
               // T1 (25/11): gli anelli come a 36d8559. Unica correzione: una parola che tocca il bordo del riquadro non si toglie piu' intera
@@ -1187,23 +1222,12 @@
                       ctx.setLineDash([]);
                       if (st.figCorta)
                           etichetta('F1', FA.X, FA.Y - (32 * Math.max(0.7, scala) + 10) * dpr, arancio, lab.f1, 'center');
-                      else if (W / dpr < 600) {
-                          if (win.innerWidth < 900) { }          // U1 (25/11): sotto i 900 px niente linea verticale (restano anelli e arco)
-                          else {
-                          const PB = proietta(ruota(CENTRI[1][0], CENTRI[1][1], CENTRI[1][2]));
-                          const yA = PB ? PB[1] - 74 * dpr : cy - R;
-                          ctx.lineWidth = 1 * dpr;
-                          ctx.strokeStyle = rgba(arancio, 0.6 * lab.f1);
-                          ctx.beginPath();
-                          ctx.moveTo(FA.X, FA.Y - 34 * dpr * Math.max(0.7, scala));
-                          ctx.lineTo(FA.X, yA);
-                          ctx.lineTo(Math.min(FA.X, 120 * dpr), yA);
-                          ctx.stroke();
-                          pillola('', 10 * dpr, yA, arancio, lab.f1, 'left', true);
-                          }
+                      else {        // F1 (25/11): guida verticale sopra il punto del campione 1, fino alla pillola con la scritta (testi.yaml)
+                          const rA = 36 * dpr * Math.max(0.7, scala);
+                          ostacoli.push({ x: FA.X - rA, y: FA.Y - rA, w: 2 * rA, h: 2 * rA });
+                          if (FB) ostacoli.push({ x: FB.X - 10 * dpr, y: FB.Y - 10 * dpr, w: 20 * dpr, h: 20 * dpr });
+                          guidata(ETI_FIG.f1 || '', FA.X, FA.Y - 34 * dpr * Math.max(0.7, scala), -1, arancio, lab.f1);
                       }
-                      else
-                          pillola('', FA.X - 52 * dpr, FA.Y - 48 * dpr, arancio, lab.f1, 'right', true);
                   }
                   if (lab.camp > 0.02 && st.figCorta) {
                       [[CENTRI[0], '1'], [CENTRI[1], '2']].forEach((v) => {
@@ -1256,23 +1280,8 @@
                       ctx.setLineDash([]);
                       if (st.figCorta)
                           etichetta('?', FB.X, FB.Y - 18 * dpr, arancio, lab.sec, 'center');
-                      else if (W / dpr < 600) {
-                          if (win.innerWidth < 900) { }          // U1 (25/11): sotto i 900 px niente linea verticale (l'arco tratteggiato resta)
-                          else {
-                          const PA = proietta(ruota(CENTRI[0][0], CENTRI[0][1], CENTRI[0][2]));
-                          const yB = PA ? PA[1] + 110 * dpr : cy + R;
-                          ctx.lineWidth = 1 * dpr;
-                          ctx.strokeStyle = rgba(arancio, 0.6 * lab.sec);
-                          ctx.beginPath();
-                          ctx.moveTo(FB.X, FB.Y + 8 * dpr);
-                          ctx.lineTo(FB.X, yB);
-                          ctx.lineTo(Math.max(FB.X, W - 120 * dpr), yB);
-                          ctx.stroke();
-                          pillola('', W - 10 * dpr, yB, arancio, lab.sec, 'right', true);
-                          }
-                      }
-                      else
-                          pillola('', FB.X + 10 * dpr, FB.Y + 52 * dpr, arancio, lab.sec, 'left', true);
+                      else          // F1 (25/11): guida verticale sotto il punto del campione 2, fino alla pillola con la scritta (testi.yaml)
+                          guidata(ETI_FIG.sec || '', FB.X, FB.Y + 10 * dpr, 1, arancio, lab.sec);
                   }
                   if (lab.reg > 0.02) {
                       const lato = R * 2.55;
