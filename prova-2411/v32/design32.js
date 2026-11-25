@@ -538,10 +538,88 @@
                   }
                   coda.length = 0;
               };
+              // S5 (25/11): ogni anello si disegna UNA volta su una tela fuori schermo (si rifa' solo se cambiano testo, raggio oltre il 2%,
+              // grandezza delle lettere o colore) e a ogni fotogramma si ruota l'immagine con drawImage: a regime 0 fillText. Le parole vicino
+              // alle etichette sfumano (maschera morbida) invece di sparire di colpo; con S2 nessuna parola si toglie per il bordo
+              const spriteAn = [];
+              const glifi = new Map();
+              const glifo = (ch, f, px, col) => {
+                  const k = ch + '|' + f + '|' + col[0] + ',' + col[1] + ',' + col[2];
+                  let g = glifi.get(k);
+                  if (g)
+                      return g;
+                  if (glifi.size > 4000)
+                      glifi.clear();
+                  const S = Math.ceil(px * 1.8) + 2, c = doc.createElement('canvas');
+                  c.width = S;
+                  c.height = S;
+                  const x = c.getContext('2d');
+                  x.font = f;
+                  fontStretta(x);
+                  x.textAlign = 'center';
+                  x.textBaseline = 'middle';
+                  x.fillStyle = rgba(col, 1);
+                  x.fillText(ch, S / 2, S / 2);
+                  g = { c, m: S / 2 };
+                  glifi.set(k, g);
+                  return g;
+              };
+              win.__spriteRifatti = win.__spriteRifatti || 0;
+              const spriteAnello = (j, an, testo, rad, fs, col) => {
+                  const key = testo + '|' + fs.toFixed(1) + '|' + col.join(',') + '|' + dpr;
+                  const c0 = spriteAn[j];
+                  if (c0 && c0.key === key && Math.abs(c0.rad - rad) / Math.max(1, rad) < 0.02)
+                      return c0;
+                  const S = Math.ceil(2 * (rad + fs * 1.3)) + 4;
+                  const cv = c0 ? c0.cv : doc.createElement('canvas');
+                  cv.width = S;
+                  cv.height = S;
+                  const g = cv.getContext('2d');
+                  g.clearRect(0, 0, S, S);
+                  g.font = '500 ' + fs.toFixed(1) + 'px ' + fm();
+                  fontStretta(g);
+                  g.textAlign = 'center';
+                  g.textBaseline = 'middle';
+                  g.fillStyle = rgba(col, 1);
+                  const nT = testo.length, nUsa = nT ? (Math.floor(an.n / nT) * nT || an.n) : an.n, m = S / 2;
+                  let i = 0;
+                  while (i < nUsa) {
+                      if (testo[i % nT] === ' ') {
+                          i++;
+                          continue;
+                      }
+                      let fine = i;
+                      while (fine < nUsa && testo[fine % nT] !== ' ')
+                          fine++;
+                      const frM = (i + fine - 1) / 2 / an.n;
+                      const salta = ((frM - an.g0 + 1) % 1) < an.gw || !!(an.gw1 && ((frM - an.g1 + 1) % 1) < an.gw1);
+                      for (let k = i; k < fine && !salta; k++) {
+                          const th = (k / an.n) * Math.PI * 2, r = th + Math.PI / 2, co = Math.cos(r), si = Math.sin(r);
+                          g.setTransform(co, si, -si, co, m + Math.cos(th) * rad, m + Math.sin(th) * rad);
+                          g.fillText(testo[k % nT], 0, 0);
+                      }
+                      i = fine;
+                  }
+                  g.setTransform(1, 0, 0, 1, 0, 0);
+                  win.__spriteRifatti++;
+                  return (spriteAn[j] = { cv, key, rad, S });
+              };
               const disegnaAnelli = (cx, cy, R, t, zoom, alfa, col, ass, diag, jv, testoStato) => {
                   aggiornaEscluse(t);
                   ctx.textAlign = 'center';
                   ctx.textBaseline = 'middle';
+                  // S5: a regime (anelli composti) gli anelli passano dalle immagini, su uno strato da cui le etichette tolgono la loro zona sfumata
+                  const regime = ass >= 0.999;
+                  let usati = 0;
+                  if (regime) {          // le zone delle etichette escluse con un ritaglio (le parole ci scorrono sotto, non spariscono intere)
+                      ctx.save();
+                      ctx.beginPath();
+                      ctx.rect(0, 0, W, H);
+                      for (const r of escluse)
+                          ctx.rect(r[0] - 6 * dpr, r[1] - 6 * dpr, r[2] - r[0] + 12 * dpr, r[3] - r[1] + 12 * dpr);
+                      ctx.clip('evenodd');
+                  }
+                  const sctx = ctx;
                   for (let j = 0; j < anelli.length; j++) {
                       const an = anelli[j];
                       const multi = j === 0 ? 1 : 1 - (jv || 0);
@@ -555,7 +633,7 @@
                           continue;
                       // S2 (25/11): ogni anello di testo tutto dentro il riquadro visibile (raggio + altezza del testo + 8 px entro il bordo
                       // piu' vicino); un anello che non ci sta non si disegna, cosi' nessuna parola resta tagliata dal bordo
-                      if (cfg.anelliDentro) {
+                      {      // S2/S5: per tutte le tele un anello o sta tutto dentro il riquadro visibile o non si disegna
                           const bx = visibile || [0, 0, W, H];
                           const spazio = Math.min(cx - bx[0], bx[2] - cx, cy - bx[1], bx[3] - cy);
                           if (rad + fs + 8 * dpr > spazio)
@@ -563,6 +641,20 @@
                           (win.__anelli = win.__anelli || {})[j] = { rad: rad / dpr, fs: fs / dpr, spazio: spazio / dpr, t: Math.round(win.performance.now()) };
                       }
                       const testo = j === 0 && testoStato && jv > 0.5 ? testoStato : an.testo;
+                      if (regime && testo.length) {
+                          const sp = spriteAnello(j, an, testo, rad, fs, col);
+                          const sc = rad / sp.rad, giroI = t * 0.001 * an.v * (j === 0 && jv > 0.5 ? 1.6 : 1);
+                          sctx.save();
+                          sctx.globalAlpha = a0;
+                          sctx.translate(cx, cy);
+                          sctx.rotate(giroI);
+                          if (sc !== 1)
+                              sctx.scale(sc, sc);
+                          sctx.drawImage(sp.cv, -sp.S / 2, -sp.S / 2);
+                          sctx.restore();
+                          usati++;
+                          continue;
+                      }
                       ctx.font = '500 ' + fs.toFixed(1) + 'px ' + fm();
                       fontStretta(ctx);
                       const giro = t * 0.001 * an.v * (j === 0 && jv > 0.5 ? 1.6 : 1);
@@ -619,6 +711,10 @@
                       }
                       ctx.setTransform(1, 0, 0, 1, 0, 0);
                   }
+                  if (regime)
+                      ctx.restore();
+                  if (cfg.nome === 'metodo')
+                      win.__anelliMetodo = usati;
               };
               const esterno = (st, t, dt, k) => {
                   const cx = st.cx * W;
@@ -692,6 +788,8 @@
                   lab.sec += ((modo === 4 ? 1 : 0) - lab.sec) * k;
                   lab.reg += ((modo === 5 ? 1 : 0) - lab.reg) * k;
                   lab.cie += ((modo === 6 ? 1 : 0) - lab.cie) * k;
+                  if (win.__misuraFig && cfg.nome === 'metodo')      // S6 (25/11): solo per le prove, che cosa prevede la figura in questo passo
+                      win.__fig = { modo, camp: +lab.camp.toFixed(2), f1: +lab.f1.toFixed(2), sec: +lab.sec.toFixed(2), reg: +lab.reg.toFixed(2), cie: +lab.cie.toFixed(2), corta: !!st.figCorta, anelli: win.__anelliMetodo || 0 };
                   const ca = Math.cos(ang);
                   const sa = Math.sin(ang);
                   const ci = Math.cos(incl);
@@ -841,9 +939,20 @@
                           fa = f;
                       }
                       const ch = c.ci > 0.5 ? '?' : SEGNI[(q.g + Math.floor(t / (jv > 0.5 && (st.luce || 0) > 0.5 ? 180 : 2300) + q.f * 13)) % SEGNI.length];
-                      ctx.fillStyle = rgba(c.ci > 0.5 ? COL.nebbia : v[2], v[1] * (c.ci > 0.5 ? 0.8 : 1));
-                      ctx.fillText(ch, o.X, o.Y);
+                      // S5 (25/11): le lettere della sfera da un archivio di glifi (ogni lettera, grandezza e colore disegnata una volta)
+                      const cg = c.ci > 0.5 ? COL.nebbia : v[2], al = v[1] * (c.ci > 0.5 ? 0.8 : 1);
+                      if (al < 0.005)
+                          return;
+                      if (!cfg.glifi) {        // dove l'archivio non conviene (misurato: «Come lo misuriamo») resta il testo diretto
+                          ctx.fillStyle = rgba(cg, al);
+                          ctx.fillText(ch, o.X, o.Y);
+                          return;
+                      }
+                      const gl = glifo(ch, f, px, cg);
+                      ctx.globalAlpha = al > 1 ? 1 : al;
+                      ctx.drawImage(gl.c, o.X - gl.m, o.Y - gl.m);
                   });
+                  ctx.globalAlpha = 1;
                   if (jv > 0.01) {
                       if (pv) {
                           const davanti = [];
@@ -2230,7 +2339,7 @@
           const cores = {};
           qq('[data-core]').forEach((c) => {
               const tipo = c.getAttribute('data-core');
-              cores[tipo] = creaCore(c, { anelliDentro: tipo === 'apertura', anelli: tipo === 'metodo' ? ANELLI_PICCOLI : tipo === 'apertura' ? ANELLI_GRANDI : [], ang0: tipo === 'finale' ? 2.2 : 0.7, dprMax: tipo === 'metodo' ? 2 : 1.5 });
+              cores[tipo] = creaCore(c, { nome: tipo, glifi: tipo !== 'metodo', anelliDentro: tipo === 'apertura', anelli: tipo === 'metodo' ? ANELLI_PICCOLI : tipo === 'apertura' ? ANELLI_GRANDI : [], ang0: tipo === 'finale' ? 2.2 : 0.7, dprMax: tipo === 'metodo' ? 2 : 1.5 });
           });
           const campi = qq('[data-campo]').map(creaCampo);
           const cuciture = qq('[data-cucitura]').map((c) => creaCucitura(c, c.getAttribute('data-cucitura')));
@@ -5721,7 +5830,7 @@
           // Parole chiare: minuscolo, senza accenti ne' punteggiatura, parole intere; vale anche per la domanda detta a voce
           const pulisci = (x) => ' ' + String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
           const ha = (t, frasi) => frasi.some((f) => t.indexOf(' ' + f + ' ') >= 0);
-          // H2 (25/11, versione 2): solo per domande di al massimo 9 parole; niente riga «Rispondo a»
+          // H2 (25/11, versione 2): solo per domande di al massimo 9 parole; niente riga di rimando alla domanda instradata
           const LAVORO = ['costruito', 'costruita', 'cosa fanno', 'cosa fate', 'che fate', 'cosa avete fatto', 'cosa hanno fatto', 'di cosa vi occupate',
               'cosa fa questo progetto', 'spiegami il progetto', 'in cosa consiste', 'riassumi', 'in breve'];
           const PROGETTO = ['cos e questo progetto', 'che progetto', 'di cosa parla', 'di che parla'];
@@ -5915,8 +6024,8 @@
           const provSez = q1('#provalo');
           if (provSez) {
               const righeP = Array.prototype.slice.call(provSez.querySelectorAll('.riga-provalo'));
-              const accendi = () => {
-                  provSez.classList.add('in-vista');
+              // S7 (25/11): la riga accesa segue lo scorrimento da subito (non solo dopo l'entrata della sezione): uguale in su e in giu'
+              const seguiRighe = () => {
                   if (fermo || !righeP.length)
                       return;
                   // V3 (25/11): la riga accesa segue lo scorrimento, nessun timer: 01 quando la sezione entra, 02 a meta', 03 verso la
@@ -5929,6 +6038,8 @@
                   ascolta(win, 'scroll', () => { if (!coda) { coda = true; win.requestAnimationFrame(posa); } }, { passive: true });
                   posa();
               };
+              seguiRighe();
+              const accendi = () => { provSez.classList.add('in-vista'); };
               if (fermo || !win.IntersectionObserver)
                   provSez.classList.add('in-vista');
               else {
