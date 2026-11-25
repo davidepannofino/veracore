@@ -110,7 +110,7 @@
   --durata-fonte: .4s;
   --curva: ease;
 }
-/* Sito pubblico: stile comune a tutte le pagine. Palette D1, tipografia D2. Neutro e sobrio per ora: l'aspetto lo decide chi cura il design. */
+/* Sito pubblico: stile comune a tutte le pagine. Palette D1, tipografia D2. Neutro e sobrio per ora: l'aspetto lo decide chi si occupa del design. */
 /* colori, caratteri e scale: le variabili di web/comune/design.css (config/design.yaml), messe prima di questo foglio */
 :root {
   --barra: 3rem;

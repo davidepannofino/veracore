@@ -1,4 +1,4 @@
-/* un solo carattere anche nelle pagine secondarie (25/11, parte 1, punto 9): solo stile, con il design 32 acceso;
+/* un solo carattere anche nelle pagine secondarie (24/11, parte 1, punto 9): solo stile, con il design 32 acceso;
    il codice del calcolo e il Rapporto che produce non cambiano */
 @font-face{font-family:"Geist Mono";font-style:normal;font-display:swap;font-weight:100 900;src:url("../fornitori/font/geist-mono-latin-wght-normal.woff2") format("woff2")}
 :root{--titolo:"Geist Mono",ui-monospace,monospace;--testo:"Geist Mono",ui-monospace,monospace;--mono:"Geist Mono",ui-monospace,monospace}
@@ -7,3 +7,7 @@ html body,html body *:not(svg):not(svg *){font-family:"Geist Mono",ui-monospace,
 .chip{white-space:normal;max-width:100%;overflow-wrap:anywhere}
 .testo-pagina table{display:block;max-width:100%;overflow-x:auto}
 .testo-pagina :is(p,li,dd,code){overflow-wrap:anywhere}
+#barra-fissa,.indice-sezioni{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.piede-avvertenze{position:static;display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;max-width:960px;margin:56px auto 0;padding:18px 16px 28px;border-top:1px solid rgba(127,127,127,.25);font-size:12px;line-height:1.5}
+.piede-avvertenze p{margin:0}
+body{padding-bottom:0!important}

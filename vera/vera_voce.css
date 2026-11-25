@@ -1,0 +1,13 @@
+/* VERA viva: la voce dal vivo nel widget (vera_voce.js), con l'interruttore proposte.voce_dal_vivo. Stessi colori di vera.css. */
+.vera-voce { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: .6rem 0 0; }
+.vera-zitto { background: transparent; color: var(--vera-ciano); border: 1px solid var(--vera-ciano); border-radius: 6px;
+  padding: .4rem .8rem; font: 500 .9rem/1.2 var(--titolo); cursor: pointer; min-height: 44px; }
+.vera-zitto[aria-pressed="true"] { color: var(--vera-ambra); border-color: var(--vera-ambra); }
+.vera-voce-stato { color: var(--vera-grigio); font-size: .9rem; margin: 0; }
+.vera-voce-stato:empty { display: none; }
+/* la domanda a voce (vera_ascolto.js), con l'interruttore proposte.domanda_a_voce */
+.vera-ascolto { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: .5rem 0; }
+.vera-parla { background: transparent; color: var(--vera-ciano); border: 1px solid var(--vera-ciano); border-radius: 6px;
+  padding: .5rem 1rem; font: 500 .95rem/1.2 var(--titolo); cursor: pointer; min-height: 44px; touch-action: none; user-select: none; }
+.vera-parla[aria-pressed="true"] { background: var(--vera-ambra); color: var(--vera-nero); border-color: var(--vera-ambra); }
+.vera-ascolto-stato { color: var(--vera-grigio); font-size: .9rem; margin: 0; }
