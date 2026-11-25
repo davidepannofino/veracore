@@ -1268,3 +1268,22 @@ html.ingresso-chiuso,html.ingresso-chiuso body{overflow:hidden;overscroll-behavi
   .percorso .nodo:has(> .nodo-testo:empty){display:none!important}
   .pagina.percorso-a-schermo #core .stanza-core>canvas{opacity:.28!important;transition:opacity .3s}
 }
+/* E1 (25/11): «Etica» del piede (verifica/#etica): il titolo arriva sotto la barra, non coperto */
+body.interne32 #etica{scroll-margin-top:112px}
+/* U2 (25/11): sotto i 900 px, prima del Neural Core la sfera fissa resta a 0 finche' «Verificalo tu» e' in vista (il testo sfuma con
+   1 - 1,7·--s), poi entra; l'invito «Scorri · entra nel Neural Core» al telefono non si mostra (finiva su «Fonti») */
+@media (max-width:899px){
+  .pagina:not(.modo-fermo) #core .stanza-core>canvas,.pagina:not(.modo-fermo) #core .nc-alone{filter:opacity(clamp(0, calc((var(--s,0) * 1.7 - .85) * 6.67), 1))}
+  .pagina .finale-centro{display:none}
+  .pagina:not(.modo-fermo) #core:not(.testo-via) .stanza-core>canvas{pointer-events:none}
+  .pagina:not(.modo-fermo) #core:not(.testo-via) .finale-testo :is(p,.registro){pointer-events:auto}
+}
+/* U1 (25/11): sotto i 900 px «Come lo misuriamo» ha la forma ferma dei passi (come .modo-fermo): sei passi uno sotto l'altro,
+   interi; niente righe che entrano ed escono, niente barra che si disegna, niente contatore che scorre */
+.pagina.passi-fermi .passi-pista{height:auto}
+.pagina.passi-fermi .passi-pista .passi:not(.classico *){position:static;height:auto;display:block;padding-bottom:calc(var(--vh)*.14)}
+.pagina.passi-fermi .passi-pista .passo{opacity:1!important;filter:none!important;transform:none!important;visibility:visible!important;pointer-events:auto;margin:0 0 40px!important;border-left-color:var(--accent)}
+.pagina.passi-fermi .passi-pista .passo::before{content:none}
+.pagina.passi-fermi .passi-pista .passo *{animation:none!important}
+.pagina.passi-fermi .passi-pista .cnt-s>span:not(:last-child){display:none}
+.pagina.passi-fermi .contatore-blocco{position:relative;top:auto}

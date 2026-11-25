@@ -1188,6 +1188,8 @@
                       if (st.figCorta)
                           etichetta('F1', FA.X, FA.Y - (32 * Math.max(0.7, scala) + 10) * dpr, arancio, lab.f1, 'center');
                       else if (W / dpr < 600) {
+                          if (win.innerWidth < 900) { }          // U1 (25/11): sotto i 900 px niente linea verticale (restano anelli e arco)
+                          else {
                           const PB = proietta(ruota(CENTRI[1][0], CENTRI[1][1], CENTRI[1][2]));
                           const yA = PB ? PB[1] - 74 * dpr : cy - R;
                           ctx.lineWidth = 1 * dpr;
@@ -1198,6 +1200,7 @@
                           ctx.lineTo(Math.min(FA.X, 120 * dpr), yA);
                           ctx.stroke();
                           pillola('', 10 * dpr, yA, arancio, lab.f1, 'left', true);
+                          }
                       }
                       else
                           pillola('', FA.X - 52 * dpr, FA.Y - 48 * dpr, arancio, lab.f1, 'right', true);
@@ -1254,6 +1257,8 @@
                       if (st.figCorta)
                           etichetta('?', FB.X, FB.Y - 18 * dpr, arancio, lab.sec, 'center');
                       else if (W / dpr < 600) {
+                          if (win.innerWidth < 900) { }          // U1 (25/11): sotto i 900 px niente linea verticale (l'arco tratteggiato resta)
+                          else {
                           const PA = proietta(ruota(CENTRI[0][0], CENTRI[0][1], CENTRI[0][2]));
                           const yB = PA ? PA[1] + 110 * dpr : cy + R;
                           ctx.lineWidth = 1 * dpr;
@@ -1264,6 +1269,7 @@
                           ctx.lineTo(Math.max(FB.X, W - 120 * dpr), yB);
                           ctx.stroke();
                           pillola('', W - 10 * dpr, yB, arancio, lab.sec, 'right', true);
+                          }
                       }
                       else
                           pillola('', FB.X + 10 * dpr, FB.Y + 52 * dpr, arancio, lab.sec, 'left', true);
@@ -2310,7 +2316,21 @@
                   });
               });
           };
-          if (!fermo && olPassi && passi.length && win.CSS && win.CSS.supports && win.CSS.supports('width', 'clamp(0px, calc(1px * 2), 3px)')) {
+          // U1 (25/11): sotto i 900 px i passi hanno la forma ferma (uno sotto l'altro, interi; niente righe che entrano ed escono)
+          const passiTel = { on: false };
+          const aggiornaPassiTel = () => {
+              const on = !fermo && larghezza() < 900;
+              if (on === passiTel.on) return;
+              passiTel.on = on;
+              root.classList.toggle('passi-fermi', on);
+              if (!on) return;
+              if (righeMov.on) { righeMov.on = false; root.classList.remove('righe-mov'); }
+              passi.forEach((p) => { p.style.opacity = ''; p.style.filter = ''; p.style.transform = ''; p.style.visibility = ''; p.__o = null;
+                  p.querySelectorAll('.passo-titolo, .passo-testo').forEach((el) => { if (el.__testo) el.textContent = el.__testo; }); });
+          };
+          aggiornaPassiTel();
+          ascolta(win, 'resize', aggiornaPassiTel);
+          if (!passiTel.on && !fermo && olPassi && passi.length && win.CSS && win.CSS.supports && win.CSS.supports('width', 'clamp(0px, calc(1px * 2), 3px)')) {
               root.classList.add('righe-mov');
               spezzaRighe();
               if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(() => { if (righeMov.on) spezzaRighe(); });
@@ -5830,6 +5850,8 @@
               ['wheel', 'touchstart', 'keydown'].forEach((ev) => ascolta(win, ev, () => { if (!tast.on) tast.tieni = 0; }));      // chi scorre davvero non viene trattenuto
               // N2 (25/11): mai contro un gesto: a un trascinamento o alla rotella il campo perde il fuoco e la pagina scorre
               ['touchmove', 'wheel'].forEach((ev) => ascolta(win, ev, () => { tast.tieni = 0; if (doc.activeElement === inputCore) inputCore.blur(); }, { passive: true }));
+              // K1 (25/11): al tocco, finche' il campo ha il fuoco, qualunque salto della pagina (anche lontano dal Neural Core) torna a y0
+              ascolta(win, 'scroll', () => { if (tast.on && !fermo && alTocco() && doc.activeElement === inputCore && Math.abs(win.scrollY - tast.y0) > 2) win.scrollTo({ top: tast.y0, behavior: 'instant' }); }, { passive: true });
               ascolta(inputCore, 'keydown', (e) => {
                   if (e.key === 'Escape' && elencoAperto()) {
                       e.preventDefault();
@@ -6120,7 +6142,9 @@
           let distSatF = 1.45, satAngF = null;
           const SAT_TEL = [-2.2, -0.94, 2.2, 0.94];      // METODO, DATI, EVIDENZE, VERIFICATORE (stesso ordine di SATELLITI)
           // N2 (25/11): la tenuta vale solo con la tastiera davvero aperta (visualViewport ridotto, o finestra accorciata di oltre 100 px)
-          const tastAperta = () => { if (!tast.on) return false; const vv = win.visualViewport;
+          // K1 (25/11): al tocco la tenuta vale finche' il campo ha il fuoco, com'era prima di N2 (su iOS con la tastiera aperta
+          // offsetTop cresce e il conto qui sotto non superava 100: la pagina finiva nel footer); col mouse resta il conto di N2
+          const tastAperta = () => { if (!tast.on) return false; if (alTocco()) { tast.eraAperta = true; return true; } const vv = win.visualViewport;
               const kb = vv ? win.innerHeight - vv.height - vv.offsetTop : 0;
               const si = kb > 100 || (tast.h0 - win.innerHeight) > 100; if (si) tast.eraAperta = true; return si; };
           let qR = 0;
@@ -6584,6 +6608,10 @@
                               const esce = i === passi.length - 1 ? 1 : 1 - liscio((u - (i + 1 - B / 2 + B * 0.4)) / (B * 0.6));
                               const o = sicuro(Math.min(entra, esce), 0);
                               const oS = o.toFixed(2), avS = lim(u - i).toFixed(2);
+                              if (passiTel.on) {         // U1: tutti fermi; attivo (per la figura) e' l'ultimo passo che ha passato la linea di lettura (60%)
+                                  const q = p.getBoundingClientRect(); if (i === 0 || q.top < H * 0.6 || (i === passi.length - 1 && q.bottom < H)) att = i;
+                                  return;
+                              }
                               if (righeMov.on) {
                                   if (o > piuAlta) { piuAlta = o; att = i; }
                                   return;
@@ -6617,9 +6645,11 @@
                           if (righeMov.ultimo >= 0 && b !== righeMov.ultimo && !nel) {
                               righeMov.cambi++;
                               if (righeMov.cambi === 2 && righeMov.campioni.length >= 4) {
-                                  const media = righeMov.campioni.reduce((x, y) => x + y, 0) / righeMov.campioni.length;
+                                  const media = win.__righeMediaFinta || righeMov.campioni.reduce((x, y) => x + y, 0) / righeMov.campioni.length;
                                   root.__righeMedia = media;
-                                  if (media > 28) { righeMov.on = false; root.classList.remove('righe-mov'); passi.forEach((p) => { p.__o = null; }); }
+                                  if (media > 28) { righeMov.on = false; root.classList.remove('righe-mov'); passi.forEach((p) => { p.__o = null; });
+                                      // M1 (25/11): senza righe-mov il testo torna intero (gli span .riga-p/.riga-in lo andavano a capo parola per parola)
+                                      passi.forEach((p) => p.querySelectorAll('.passo-titolo, .passo-testo').forEach((el) => { if (el.__testo) el.textContent = el.__testo; })); }
                               }
                           }
                           if (!nel) righeMov.ultimo = b;
@@ -6739,6 +6769,7 @@
                       const jv = facile(lim((q - 0.32) / 0.2));
                       const hudO = lim((q - 0.42) / 0.14);
                       finale.style.setProperty('--s', sp.toFixed(4));
+                      finale.classList.toggle('testo-via', sp * 1.7 >= 0.85);     // U2 (25/11): «Verificalo tu» uscito (al telefono la sfera entra)
                       finale.style.setProperty('--m', ass.toFixed(4));
                       finale.style.setProperty('--cf', lim(q / 0.1).toFixed(3));
                       const tfH = tuffo.f && tuffo.f.modo === 'camera' ? tuffo.f : null;
@@ -6975,6 +7006,7 @@
               segnaPazienti(celleP.length);
               if (finale) {
                   finale.style.setProperty('--s', '1');
+                  finale.classList.add('testo-via');
                   finale.style.setProperty('--m', '1');
               }
               if (hudEl) {
