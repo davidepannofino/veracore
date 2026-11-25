@@ -1056,3 +1056,20 @@ body.crash32 progress#barra::-moz-progress-bar{background:linear-gradient(90deg,
 body.crash32 #rapporto.cornice-entra{animation:u8-cornice .7s var(--ease-roll) both}
 @keyframes u8-cornice{from{opacity:0;transform:translateY(24px) scale(.985);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
 }
+/* F3 (chiusura 25/11): il ritardo delle righe di «Provalo» con :nth-child (nessun attributo style: la CSP lo blocca) */
+.registro-provalo .registro-riga:nth-child(1){--i:1}
+.registro-provalo .registro-riga:nth-child(2){--i:2}
+.registro-provalo .registro-riga:nth-child(3){--i:3}
+.registro-provalo .registro-riga:nth-child(4){--i:4}
+/* F4 (chiusura 25/11): la riga «Rispondo a: «…»» sopra la domanda instradata */
+.rc-rispondo{margin:0 0 6px;font:400 12px/1.4 var(--font-main);letter-spacing:.03em;color:var(--etichetta)}
+/* F9 (chiusura 25/11): sotto i 520 px il campo della domanda prende tutta la prima riga; sulla seconda elenco, microfono, voce e
+   «Chiedi» (a destra, piu' largo). Aspetto dei tasti invariato */
+@media (max-width:519px){
+.barra-core{flex-wrap:wrap}
+.barra-core .campo-core{flex:1 1 100%;order:0;min-width:0}
+.barra-core .elenco-apri{order:1}
+.barra-core .mic{order:2}
+.barra-core .voce{order:3}
+.barra-core .invia{order:4;margin-left:auto;flex:0 1 auto;min-width:120px}
+}

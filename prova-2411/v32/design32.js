@@ -2,7 +2,8 @@
 // (web/sito/sito.yaml). Si portano l'aspetto e il movimento; le parole vengono dalla pagina (data-parole, da web/sito/testi.yaml),
 // i numeri dalla pagina (costruita da strumenti/sito_design32.py con i file del progetto), le risposte dal catalogo verificato
 // (vera/catalogo.json) o, dal vivo, dal widget dell'assistente con i suoi eventi veri (docs/VERA_EVENTI.md).
-// Niente microfono, niente sintesi nel browser, nessuna richiesta fuori dal sito.
+// Domanda a voce (decisione del gruppo del 25/11/2026): il riconoscimento vocale del browser, un ascolto per tocco sul tasto;
+// nessuna apertura diretta del microfono, nessuna registrazione, niente sintesi nel browser; nessuna richiesta fuori dal sito.
 (() => {
   "use strict";
   const pagina = document.querySelector('.pagina[data-design="32"]');
@@ -4397,13 +4398,27 @@
           // aumentano; ogni seguito asincrono lo controlla). Un'apertura chiesta mentre la risposta si sta chiudendo parte quando la
           // chiusura e' finita (solo l'ultima chiesta)
           let chiusaFino = 0, inCoda = 0;
-          const chiediVera = (testo, id, via) => {
+          let rigaRispondo = null;
+          const mostraRispondo = (dom) => {
+              const dEl = q1('[data-b-domanda]');
+              if (!rigaRispondo && dEl) {
+                  rigaRispondo = doc.createElement('p');
+                  rigaRispondo.className = 'rc-rispondo';
+                  rigaRispondo.setAttribute('data-rc-rispondo', '1');
+                  dEl.parentNode.insertBefore(rigaRispondo, dEl);
+              }
+              if (rigaRispondo) {
+                  rigaRispondo.textContent = dom ? String(PR.rispondo_a || '').replace('{domanda}', dom) : '';
+                  rigaRispondo.hidden = !dom;
+              }
+          };
+          const chiediVera = (testo, id, via, originale) => {
               const resta = chiusaFino - win.performance.now();
               if (resta > 0) {
                   const q = ++inCoda;
                   dopo(() => { if (q === inCoda) {
                       chiusaFino = 0;
-                      chiediVera(testo, id, via);
+                      chiediVera(testo, id, via, originale);
                   } }, resta + 30);
                   return;
               }
@@ -4434,15 +4449,17 @@
                   const f = (c.fonti || [])[0] || null;
                   const esito = (PR.esiti || {}).preparata || '';
                   const frasi = c.frasi && c.frasi.length ? c.frasi.map((x) => x.testo) : dividiFrasi(c.risposta);
-                  const e = nuovaRisposta({ domanda: c.domanda, frasi, tipo: c.tipo, classe: tipoClasse(c.tipo), fonte: f, esito,
+                  mostraRispondo(originale ? c.domanda : '');
+                  const e = nuovaRisposta({ domanda: originale || c.domanda, frasi, tipo: c.tipo, classe: tipoClasse(c.tipo), fonte: f, esito,
                       nota: [PR.nota_preparata, c.riga_fonti].filter(Boolean).join(' · '), audio: voceAttiva ? AUDIO[id] : null });
-                  scriviDomanda(c.domanda, g, via || '');
+                  scriviDomanda(originale || c.domanda, g, via || '');
                   impostaStato('preparata');
                   anelloTesto = ANELLO('risposta');
                   dopo(() => { if (g === genV)
                       mostraFonte(e, f, g, esito); }, 420);
                   return;
               }
+              mostraRispondo('');
               const domanda = String(testo || '').trim();
               const campo = sezVera ? sezVera.querySelector('#vera-domanda') : null;
               const modulo = campo ? campo.form : null;
@@ -5292,6 +5309,30 @@
           voceServizio(false);      // M4: la voce del servizio segue lo stato iniziale del tasto (accesa se non spenta)
           const fermaVoceServizio = () => { const sez = doc.querySelector('section.vera'); if (sez && win.VeraVoce && win.VeraVoce.ferma)
               win.VeraVoce.ferma(sez); };
+          // F4 (chiusura 25/11): domande su VERA, sul gruppo e sul progetto vanno subito alla risposta preparata, senza il servizio.
+          // Parole chiare: minuscolo, senza accenti ne' punteggiatura, parole intere; vale anche per la domanda detta a voce
+          const pulisci = (x) => ' ' + String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+          const ha = (t, frasi) => frasi.some((f) => t.indexOf(' ' + f + ' ') >= 0);
+          const PROGETTO = ['costruito', 'costruita', 'di cosa parla', 'di che parla', 'spiegami il progetto', 'cos e questo progetto', 'che progetto',
+              'cosa avete fatto', 'cosa hanno fatto', 'in cosa consiste'];
+          const GRUPPO_CHI = ['siete', 'vi ha', 'ha fatto', 'l ha fatto', 'ha realizzato', 'c e dietro', 'sono i ragazzi', 'sono gli studenti'];
+          const GRUPPO = ['presentatevi', 'parlami di voi', 'parlami del gruppo', 'parlami della squadra'];
+          const VERA_FRASI = ['chi sei', 'che cosa fai', 'cosa fai', 'che fai', 'cosa sai fare', 'come funzioni', 'a cosa servi', 'presentati', 'chi e vera'];
+          const SALUTI = ['ciao', 'ehi', 'buongiorno', 'salve'];
+          const instrada = (v) => {
+              const t = pulisci(v), chi = ha(t, ['chi']);
+              if (ha(t, PROGETTO))
+                  return chi ? 'giuria_56' : 'messaggio_progetto';
+              if ((chi && ha(t, GRUPPO_CHI)) || ha(t, GRUPPO))
+                  return 'giuria_56';
+              if (ha(t, VERA_FRASI))
+                  return 'giuria_55';
+              const parole = t.trim().split(' ').filter(Boolean);
+              if (parole.length && parole.some((p) => SALUTI.includes(p)) && parole.every((p) => SALUTI.includes(p) || p === 'vera'))
+                  return 'giuria_55';
+              return null;
+          };
+          root.__instrada = instrada;
           const inviaDalCampo = () => {
               const v = inputCore ? inputCore.value.trim() : '';
               voceServizio(true);
@@ -5302,8 +5343,11 @@
                   return;
               }
               const c = nelCatalogo(v);
+              const idI = c ? null : instrada(v);
               if (c)                                    // scritta uguale a una del catalogo: la risposta preparata
                   chiediVera(c.domanda, c.id, VIA.preparata || '');
+              else if (idI && CATALOGO && CATALOGO.per_id && CATALOGO.per_id[idI])
+                  chiediVera(v, idI, VIA.preparata || '', v);      // F4: instradata, con la riga «Rispondo a: «…»»
               else if (dalVivo)
                   chiediVera(v, null, VIA.scritta || '');
               else {                                    // senza servizio: l'elenco, filtrato con le sue parole
