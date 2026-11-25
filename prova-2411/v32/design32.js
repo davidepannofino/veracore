@@ -5854,11 +5854,27 @@
               // aperto, le parole lo filtrano
               ascolta(inputCore, 'input', () => { segnaCampo(); if (elencoAperto())
                   apriElenco(inputCore.value.trim() ? inputCore.value : ''); });
-              ascolta(inputCore, 'focus', () => { if (fermo) return; tast.on = true; tast.y0 = win.scrollY; tast.q = Math.max(qF, 0.62); tast.kb = -1; tast.h0 = win.innerHeight; tast.eraAperta = false; });
-              ascolta(inputCore, 'blur', () => { if (!tast.on) return; tast.on = false; tast.kb = -1; tast.tieni = tast.eraAperta ? win.performance.now() + 900 : 0; if (formCore) formCore.style.transform = ''; });
+              ascolta(inputCore, 'focus', () => { if (fermo) return; tast.on = true; tast.trascinato = false; tast.y0 = win.scrollY; tast.q = Math.max(qF, 0.62); tast.kb = (tast.pre || 0) > win.performance.now() ? tast.kb : -1; tast.h0 = win.innerHeight; tast.eraAperta = false; });
+              ascolta(inputCore, 'blur', () => { if (!tast.on) return; tast.on = false; tast.kb = -1; tast.pre = 0; tast.tieni = tast.eraAperta ? win.performance.now() + 900 : 0; if (formCore) formCore.style.transform = '';
+                  if (alTocco()) { dopo(riallinea, 150); dopo(riallinea, 500); } });
+              // K3a (25/11, iOS, WebKit 297779): al tocco il modulo sale PRIMA della tastiera (quando il campo riceve il fuoco e' gia' sopra
+              // la zona della tastiera: iOS non scorre e non sposta niente); arrivata la tastiera, il codice di N2 mette il valore esatto.
+              // Se entro 900 ms non arrivano ne' fuoco ne' tastiera (o un trascinamento senza fuoco), il modulo torna giu'
+              const giuModulo = () => { tast.pre = 0; tast.kb = -1; if (formCore) formCore.style.transform = ''; };
+              ascolta(inputCore, 'touchstart', () => { if (fermo || !alTocco() || !formCore || doc.activeElement === inputCore) return;
+                  const su = Math.round(win.innerHeight * 0.45);
+                  tast.pre = win.performance.now() + 900; tast.kb = su; formCore.style.transform = 'translateY(' + (-su) + 'px)';
+                  dopo(() => { if (tast.pre && win.performance.now() >= tast.pre && !tastAperta()) giuModulo(); }, 920); }, { passive: true });
+              // K3b (25/11): all'uscita dal campo, al tocco, un passo di 1 px avanti e indietro fa riallineare a iOS gli elementi fissi
+              const riallinea = () => { if (doc.activeElement === inputCore) return;
+                  // (dopo un trascinamento la pagina e' libera, regola di N2: si riallinea dove si trova)
+                  const y = !tast.trascinato && Math.abs(win.scrollY - tast.y0) <= 400 ? tast.y0 : win.scrollY;
+                  win.scrollTo({ top: y + 1, behavior: 'instant' });
+                  win.requestAnimationFrame(() => { win.scrollTo({ top: y, behavior: 'instant' }); if (typeof sveglia === 'function') sveglia(); }); };
               ['wheel', 'touchstart', 'keydown'].forEach((ev) => ascolta(win, ev, () => { if (!tast.on) tast.tieni = 0; }));      // chi scorre davvero non viene trattenuto
               // N2 (25/11): mai contro un gesto: a un trascinamento o alla rotella il campo perde il fuoco e la pagina scorre
-              ['touchmove', 'wheel'].forEach((ev) => ascolta(win, ev, () => { tast.tieni = 0; if (doc.activeElement === inputCore) inputCore.blur(); }, { passive: true }));
+              ['touchmove', 'wheel'].forEach((ev) => ascolta(win, ev, () => { tast.tieni = 0; if (doc.activeElement === inputCore) { tast.trascinato = true; inputCore.blur(); }
+                  else if (tast.pre) giuModulo(); }, { passive: true }));          // K3a: trascinamento senza fuoco, il modulo torna giu'
               // K1 (25/11): al tocco, finche' il campo ha il fuoco, qualunque salto della pagina (anche lontano dal Neural Core) torna a y0
               ascolta(win, 'scroll', () => { if (tast.on && !fermo && alTocco() && doc.activeElement === inputCore && Math.abs(win.scrollY - tast.y0) > 2) win.scrollTo({ top: tast.y0, behavior: 'instant' }); }, { passive: true });
               ascolta(inputCore, 'keydown', (e) => {
@@ -6146,7 +6162,7 @@
           let qF = 0;
           // V2 (25/11): con il campo del Neural Core a fuoco (tastiera aperta) la scena resta ferma su «core aperto», il modulo si appoggia
           // sopra la tastiera (visualViewport), la pagina non salta e la sfera si riduce nello spazio sopra il modulo
-          const tast = { on: false, y0: 0, q: 0, kb: -1, tieni: 0, h0: 0, eraAperta: false };
+          const tast = { on: false, y0: 0, q: 0, kb: -1, tieni: 0, h0: 0, eraAperta: false, pre: 0 };
           const geoN6 = { t: -1e9, W: 0, H: 0, barra: 64, modulo: 0 };
           let distSatF = 1.45, satAngF = null;
           const SAT_TEL = [-2.2, -0.94, 2.2, 0.94];      // METODO, DATI, EVIDENZE, VERIFICATORE (stesso ordine di SATELLITI)
@@ -6852,7 +6868,7 @@
                               percorso.style.setProperty('--percorso-giu', giu);
                           }
                       }
-                      if (!tastAperta() && tast.kb > 0 && formCore) { tast.kb = -1; formCore.style.transform = ''; }
+                      if (!tastAperta() && tast.kb > 0 && formCore && win.performance.now() > (tast.pre || 0)) { tast.kb = -1; tast.pre = 0; formCore.style.transform = ''; }      // K3a: non durante la salita anticipata
                       if (tastAperta() && formCore) {
                           const vv = win.visualViewport;
                           const kb = vv ? Math.max(0, Math.round(win.innerHeight - vv.height - vv.offsetTop)) : 0;
