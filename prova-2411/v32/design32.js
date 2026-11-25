@@ -5919,16 +5919,30 @@
               ascolta(inputCore, 'input', () => { segnaCampo(); if (elencoAperto())
                   apriElenco(inputCore.value.trim() ? inputCore.value : ''); });
               ascolta(inputCore, 'focus', () => { if (fermo) return; tast.on = true; tast.trascinato = false; tast.y0 = win.scrollY; tast.q = Math.max(qF, 0.62); tast.kb = (tast.pre || 0) > win.performance.now() ? tast.kb : -1; tast.h0 = win.innerHeight; tast.eraAperta = false; });
-              ascolta(inputCore, 'blur', () => { if (!tast.on) return; tast.on = false; tast.kb = -1; tast.pre = 0; tast.tieni = tast.eraAperta ? win.performance.now() + 900 : 0; if (formCore) formCore.style.transform = '';
+              // K3-bis (25/11): se il fuoco esce per un tocco DENTRO il modulo (CHIEDI, elenco, microfono), il modulo scende dopo il clic
+              // (scendendo subito, il clic cadeva su un altro elemento e la domanda non partiva)
+              let toccoModulo = 0;
+              if (formCore) ascolta(formCore, 'touchstart', (e) => { if (e.target !== inputCore) toccoModulo = win.performance.now(); }, { passive: true, capture: true });
+              ascolta(inputCore, 'blur', () => { if (!tast.on) return; tast.on = false; tast.kb = -1; tast.pre = 0; tast.tieni = tast.eraAperta ? win.performance.now() + 900 : 0;
+                  if (formCore) { if (win.performance.now() - toccoModulo < 700) dopo(() => { if (!tast.on) formCore.style.transform = ''; }, 400); else formCore.style.transform = ''; }
                   if (alTocco()) { dopo(riallinea, 150); dopo(riallinea, 500); } });
               // K3a (25/11, iOS, WebKit 297779): al tocco il modulo sale PRIMA della tastiera (quando il campo riceve il fuoco e' gia' sopra
               // la zona della tastiera: iOS non scorre e non sposta niente); arrivata la tastiera, il codice di N2 mette il valore esatto.
               // Se entro 900 ms non arrivano ne' fuoco ne' tastiera (o un trascinamento senza fuoco), il modulo torna giu'
               const giuModulo = () => { tast.pre = 0; tast.kb = -1; if (formCore) formCore.style.transform = ''; };
-              ascolta(inputCore, 'touchstart', () => { if (fermo || !alTocco() || !formCore || doc.activeElement === inputCore) return;
+              // K3-bis (25/11): la salita si fa al RILASCIO del dito, con il fuoco dato da noi (sul touchstart il modulo saliva sotto il
+              // dito e il rilascio cadeva su un altro elemento: niente fuoco, niente tastiera). Sul touchstart si ricorda solo il punto
+              let dito = null;
+              ascolta(inputCore, 'touchstart', (e) => { const t = e.touches && e.touches[0]; dito = t ? { x: t.clientX, y: t.clientY } : null; }, { passive: true });
+              ascolta(inputCore, 'touchend', (e) => {
+                  const t = e.changedTouches && e.changedTouches[0], d0 = dito; dito = null;
+                  if (fermo || !alTocco() || !formCore || doc.activeElement === inputCore || !d0 || !t) return;       // gia' a fuoco: il tocco sposta il cursore
+                  if (Math.hypot(t.clientX - d0.x, t.clientY - d0.y) >= 10) return;
+                  e.preventDefault();
                   const su = Math.round(win.innerHeight * 0.45);
                   tast.pre = win.performance.now() + 900; tast.kb = su; formCore.style.transform = 'translateY(' + (-su) + 'px)';
-                  dopo(() => { if (tast.pre && win.performance.now() >= tast.pre && !tastAperta()) giuModulo(); }, 920); }, { passive: true });
+                  try { inputCore.focus({ preventScroll: true }); } catch (x) { inputCore.focus(); }
+                  dopo(() => { if (tast.pre && win.performance.now() >= tast.pre && !tastAperta()) giuModulo(); }, 920); }, { passive: false });
               // K3b (25/11): all'uscita dal campo, al tocco, un passo di 1 px avanti e indietro fa riallineare a iOS gli elementi fissi
               const riallinea = () => { if (doc.activeElement === inputCore) return;
                   // (dopo un trascinamento la pagina e' libera, regola di N2: si riallinea dove si trova)
