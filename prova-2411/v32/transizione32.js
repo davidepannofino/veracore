@@ -83,6 +83,23 @@
       mo.observe(rap, { attributes: true, attributeFilter: ["hidden"] });
     }
   }
+  // L2 (25/11): lo stesso bagliore sotto il cursore nelle pagine interne (chiare), solo con il mouse; si muove solo quando serve
+  if (d.body && d.body.classList.contains("interne32") && w.matchMedia && w.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    const al = d.createElement("div"); al.className = "alone"; al.setAttribute("aria-hidden", "true");
+    const sp = d.createElement("span"); sp.className = "alone-chiaro"; al.appendChild(sp); d.body.appendChild(al);
+    let x = -999, y = -999, tx = -999, ty = -999, forza = 1, fT = 1, giro = 0, ultimo = 0;
+    const passo = (t) => {
+      const dt = Math.min(0.05, ultimo ? (t - ultimo) / 1000 : 0.016); ultimo = t;
+      const k = 1 - Math.exp(-dt * 17); x += (tx - x) * k; y += (ty - y) * k; forza += (fT - forza) * (1 - Math.exp(-dt * 10));
+      sp.style.setProperty("--ax", x.toFixed(1) + "px"); sp.style.setProperty("--ay", y.toFixed(1) + "px");
+      sp.style.setProperty("--as", (1 - 0.42 * (forza - 1) / 0.55).toFixed(3)); sp.style.setProperty("--af", forza.toFixed(3));
+      if (Math.abs(tx - x) > 0.5 || Math.abs(ty - y) > 0.5 || Math.abs(fT - forza) > 0.01) giro = w.requestAnimationFrame(passo); else { giro = 0; ultimo = 0; }
+    };
+    d.addEventListener("pointermove", (e) => { if (e.pointerType === "touch") return; tx = e.clientX; ty = e.clientY;
+      if (x < -900) { x = tx; y = ty; } al.classList.add("on"); if (!giro) giro = w.requestAnimationFrame(passo); }, { passive: true });
+    d.addEventListener("pointerover", (e) => { fT = e.target && e.target.closest && e.target.closest("a, button, summary, input") ? 1.55 : 1; if (!giro) giro = w.requestAnimationFrame(passo); });
+    d.documentElement.addEventListener("pointerleave", () => al.classList.remove("on"));
+  }
   if ("onpagereveal" in w) return;                // transizioni fra documenti del browser: bastano quelle del CSS
   d.addEventListener("click", (e) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;

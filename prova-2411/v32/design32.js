@@ -384,7 +384,7 @@
               const sat = SATELLITI.map(() => 0);
               let ampPrima = 0;
               let assV = 0;
-              let ultimaOnda = 0;
+              let ultimaOnda = 0, ultimoImp = 0, ultimoImpP = 0;
               let filoS = null, filoK = null, filoT0 = -1e9;
               let ang = cfg.ang0 || 0.7;
               let incl = 0.36;
@@ -904,6 +904,15 @@
                               onde.push({ t0: t, c: 1, dentro: true });
                               ultimaOnda = t;
                           }
+                          // L1 (25/11): un impulso verso il nucleo a ogni risultato del riconoscimento, uno piccolo a ogni tasto
+                          if ((st.impulsi || 0) !== ultimoImp) {
+                              ultimoImp = st.impulsi || 0;
+                              onde.push({ t0: t, c: 1, dentro: true });
+                          }
+                          if ((st.impulsiP || 0) !== ultimoImpP) {
+                              ultimoImpP = st.impulsiP || 0;
+                              onde.push({ t0: t, c: 0, dentro: true, piccola: true });
+                          }
                       }
                       else
                           onde.length = 0;
@@ -917,7 +926,7 @@
                           }
                           const rr = Math.min(o.dentro ? R * (2.5 - 1.35 * esce(p)) : R * (1.14 + 1.55 * esce(p)), st.anelloMax ? st.anelloMax * dpr : 1e9);
                           ctx.lineWidth = 1.3 * dpr;
-                          ctx.strokeStyle = rgba(o.c ? COL.segnale : col, 0.55 * Math.pow(1 - p, 1.5) * jv);
+                          ctx.strokeStyle = rgba(o.c ? COL.segnale : col, (o.piccola ? 0.3 : 0.55) * Math.pow(1 - p, 1.5) * jv);
                           ctx.beginPath();
                           ctx.arc(cx, cy, rr, 0, Math.PI * 2);
                           ctx.stroke();
@@ -2240,6 +2249,40 @@
               });
           }
           const metodo = q1('.metodo');
+          // L3 (25/11): cambio di passo con una sola maschera leggera che attraversa la colonna del testo dal basso in alto in 0,5 s;
+          // il testo cambia a meta' corsa, il blocco nuovo sale di 24 px, il numero grande (opacita' 0,08) passa da 1,12 a 1.
+          // Solo transform e opacity (Web Animations, sul compositore); con il movimento ridotto o la pagina ferma non c'e'.
+          const maschera = (() => {
+              if (fermo || !olPassi || !passi.length || !olPassi.animate) return null;
+              const ma = doc.createElement('li'); ma.className = 'passi-maschera'; ma.setAttribute('aria-hidden', 'true');
+              const gr = doc.createElement('li'); gr.className = 'passi-grande'; gr.setAttribute('aria-hidden', 'true');
+              olPassi.appendChild(gr); olPassi.appendChild(ma);
+              for (let n = olPassi; n && n !== doc.documentElement; n = n.parentElement) {   // il fondo vero della sezione
+                  const f = win.getComputedStyle(n).backgroundColor;
+                  if (f && f !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(f)) { ma.style.setProperty('--fondo-maschera', f); break; }
+              }
+              root.classList.add('con-maschera');
+              let visto = 0, mostrato = 0, cambioA = -1;
+              const scrivi = (i, sale) => {
+                  passi.forEach((p, k) => { const o = k === i ? '1' : '0'; if (p.__o !== o) { p.__o = o; p.style.opacity = o; p.style.visibility = k === i ? '' : 'hidden'; } });
+                  gr.textContent = String(i + 1).padStart(2, '0');
+                  if (sale) {
+                      passi[i].animate([{ transform: 'translateY(24px)' }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.7,.2,1)' });
+                      gr.animate([{ transform: 'scale(1.12)' }, { transform: 'none' }], { duration: 600, easing: 'cubic-bezier(.2,.7,.2,1)' });
+                  }
+              };
+              scrivi(0, false);
+              return {
+                  mostra(att, t) {
+                      if (att !== visto) {
+                          visto = att; cambioA = t + 250;
+                          ma.animate([{ transform: 'translateY(100%)', opacity: 1 }, { transform: 'translateY(-100%)', opacity: 1 }], { duration: 500, easing: 'cubic-bezier(.45,0,.25,1)' });
+                      }
+                      if (cambioA >= 0 && t >= cambioA) { cambioA = -1; mostrato = visto; scrivi(mostrato, true); }
+                      return mostrato;
+                  }
+              };
+          })();
           const risSez = q1('.risultato');
           const foglioEl = q1('#due-campioni');
           let pFoglio = '', foglioSu = false, lineaFoglio = null;
@@ -2472,8 +2515,12 @@
           const scenaEl = q1('[data-scena]');
           const aloneEl = q1('[data-alone]');
           const creaAlone = () => {
-              if (!aloneEl || !win.matchMedia || !win.matchMedia('(hover: hover) and (pointer: fine)').matches)
+              // L2 (25/11): solo con il mouse e senza movimento ridotto; altrimenti l'elemento non c'e' proprio
+              if (!aloneEl || ridotto || !win.matchMedia || !win.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                  if (aloneEl)
+                      aloneEl.remove();
                   return null;
+              }
               const strati = Array.prototype.slice.call(aloneEl.children);
               let x = -999, y = -999, tx = -999, ty = -999;
               let visto = false;
@@ -4406,21 +4453,37 @@
           // aumentano; ogni seguito asincrono lo controlla). Un'apertura chiesta mentre la risposta si sta chiudendo parte quando la
           // chiusura e' finita (solo l'ultima chiesta)
           let chiusaFino = 0, inCoda = 0;
-          let rigaRispondo = null;
-          const mostraRispondo = (dom) => {
-              const dEl = q1('[data-b-domanda]');
-              if (!rigaRispondo && dEl) {
-                  rigaRispondo = doc.createElement('p');
-                  rigaRispondo.className = 'rc-rispondo';
-                  rigaRispondo.setAttribute('data-rc-rispondo', '1');
-                  dEl.parentNode.insertBefore(rigaRispondo, dEl);
+          // H3: le proposte sotto un rifiuto per mancanza di fatti: lo stesso filtro dell'elenco (sulle parole di almeno 4 lettere),
+          // altrimenti le prime tre domande suggerite del sito
+          const MANCANO_FATTI = ['nessuna_frase_verificata', 'prove_insufficienti', 'fuori_tema'];
+          const togliProposte = () => qq('.rc-proposte').forEach((x) => x.remove());
+          const mostraProposte = (dom) => {
+              const storie = q1('[data-storie]');
+              if (!storie)
+                  return;
+              const norm = (x) => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+              const parole = norm(dom).split(' ').filter((w) => w.length >= 4);
+              const voci = qq('.elenco-domande [data-chiedi-id]');
+              let ids = parole.length ? voci.filter((b) => parole.every((w) => norm(b.textContent).includes(w))).map((b) => b.getAttribute('data-chiedi-id')) : [];
+              if (!ids.length) {
+                  const sv = doc.querySelector('section.vera');
+                  ids = String(sv ? sv.getAttribute('data-suggerite') || '' : '').split(',').filter(Boolean);
               }
-              if (rigaRispondo) {
-                  rigaRispondo.textContent = dom ? String(PR.rispondo_a || '').replace('{domanda}', dom) : '';
-                  rigaRispondo.hidden = !dom;
-              }
+              ids = ids.filter((x, i) => ids.indexOf(x) === i && CATALOGO && CATALOGO.per_id && CATALOGO.per_id[x]).slice(0, 3);
+              if (!ids.length)
+                  return;
+              const box = doc.createElement('div');
+              box.className = 'rc-proposte';
+              const t = doc.createElement('p');
+              t.className = 'rc-proposte-titolo';
+              t.textContent = String(PR.posso_risponderti || '');
+              box.appendChild(t);
+              ids.forEach((id) => { const bt = doc.createElement('button'); bt.type = 'button'; bt.className = 'rc-proposta';
+                  bt.setAttribute('data-chiedi-id', id); bt.textContent = CATALOGO.per_id[id].domanda; box.appendChild(bt); });
+              storie.appendChild(box);
           };
           const chiediVera = (testo, id, via, originale) => {
+              togliProposte();
               const resta = chiusaFino - win.performance.now();
               if (resta > 0) {
                   const q = ++inCoda;
@@ -4457,7 +4520,6 @@
                   const f = (c.fonti || [])[0] || null;
                   const esito = (PR.esiti || {}).preparata || '';
                   const frasi = c.frasi && c.frasi.length ? c.frasi.map((x) => x.testo) : dividiFrasi(c.risposta);
-                  mostraRispondo(originale ? c.domanda : '');
                   const e = nuovaRisposta({ domanda: originale || c.domanda, frasi, tipo: c.tipo, classe: tipoClasse(c.tipo), fonte: f, esito,
                       nota: [PR.nota_preparata, c.riga_fonti].filter(Boolean).join(' · '), audio: voceAttiva ? AUDIO[id] : null });
                   scriviDomanda(originale || c.domanda, g, via || '');
@@ -4467,7 +4529,6 @@
                       mostraFonte(e, f, g, esito); }, 420);
                   return;
               }
-              mostraRispondo('');
               const domanda = String(testo || '').trim();
               const campo = sezVera ? sezVera.querySelector('#vera-domanda') : null;
               const modulo = campo ? campo.form : null;
@@ -4626,18 +4687,38 @@
           };
           ascolta(root, 'keydown', (e) => { if (e.key === 'Escape' && !elencoAperto() && chiudiRisposta())
               e.preventDefault(); });
-          // U4 (ultimo giro 25/11; decisione del gruppo del 25/11, 09:00): la domanda a voce. Il tasto esiste solo se il browser ha il
-          // riconoscimento vocale. Un tocco avvia UN ascolto (it-IT, continuous false, risultati parziali nel campo); mai ascolto continuo,
-          // nessuna parola che lo accenda da sola, nessuna registrazione: al servizio va solo il testo, come per una domanda scritta. Un secondo tocco
-          // ferma. Alla fine la domanda resta 0,8 s nel campo e parte come «Chiedi»; niente riconosciuto, niente parte.
-          const Riconoscitore = win.SpeechRecognition || win.webkitSpeechRecognition;
+          // U4 e K1-K7 (25/11; decisione del gruppo del 25/11, 09:00): la domanda a voce con il riconoscimento vocale del browser. Il
+          // tasto esiste solo se il browser ha il riconoscimento e se proposte.domanda_a_voce e' acceso. Un tocco avvia UN ascolto
+          // (it-IT, continuous false, risultati parziali nel campo); mai ascolto continuo, nessuna parola che lo accenda da sola, nessuna
+          // registrazione: al servizio va solo il testo. La fine la decidiamo noi (1,8 s senza parole nuove, 7 s senza risultati, 15 s
+          // in tutto) e lo stato si azzera sempre (1,5 s dopo stop() anche senza onend); un numero di generazione scarta i seguiti
+          // in ritardo. Alla fine, se nel campo c'e' testo riconosciuto (anche solo parziale), la domanda parte dopo 0,8 s.
+          const Riconoscitore = PAROLE.microfono_acceso ? (win.SpeechRecognition || win.webkitSpeechRecognition) : null;
           const PM = PC.microfono || {};
-          let tastoMic = null, notaMic = null, ascoltoMic = null, testoMic = '', finaleMic = false;
+          let tastoMic = null, notaMic = null, rigaMic = null, ascoltoMic = null, testoMic = '', genMic = 0, fineMicT = 0;
+          let tSilenzio = 0, tNiente = 0, tMax = 0, tFine = 0;
           const PREF_MIC = 'ncb.mic.v1';
+          // L1: gli impulsi della sfera vengono solo da eventi veri: parole nuove dal riconoscimento, tasti premuti nel campo (al
+          // massimo uno ogni 120 ms)
+          let impulsiMic = 0, impulsiTasti = 0, ultimoTasto = 0, attentaFino = 0;
+          ascolta(root, 'vera-mic', (e) => { if (e.detail && e.detail.tipo === 'risultato')
+              impulsiMic++; });
+          if (inputCore)
+              ascolta(inputCore, 'keydown', () => { const ora = win.performance.now(); attentaFino = ora + 1200;
+                  if (ora - ultimoTasto >= 120) { ultimoTasto = ora; impulsiTasti++; } });
+          root.__impulsi = () => ({ mic: impulsiMic, tasti: impulsiTasti });
+          const micEvento = (tipo) => { try {
+              root.dispatchEvent(new CustomEvent('vera-mic', { detail: { tipo } }));
+          }
+          catch (x) { } };
           const mostraNotaMic = (si, testo) => { if (notaMic) {
               notaMic.textContent = testo || PM.avviso || '';
               notaMic.hidden = !si;
               notaMic.classList.toggle('errore', !!testo);
+          } };
+          const mostraRigaMic = (testo) => { if (rigaMic) {
+              rigaMic.textContent = testo || '';
+              rigaMic.hidden = !testo;
           } };
           const statoMic = (on) => {
               if (!tastoMic)
@@ -4657,37 +4738,64 @@
                   if (e)
                       e.textContent = on ? ' · ' + (PM.ascolta || '') : '';
               }
-              if (statoEl && on)
-                  statoEl.textContent = NOME + ' · ' + (PM.ascolta || '');
-              else if (statoEl)
-                  statoEl.textContent = ETI[statoC] || statoC;
+              if (statoEl)
+                  statoEl.textContent = on ? NOME + ' · ' + (PM.ascolta || '') : (ETI[statoC] || statoC);
               suono.voce(on);         // il suono d'ambiente si abbassa mentre ascolta
           };
-          const fineAscolto = () => {
-              const t = testoMic.trim(), fin = finaleMic;
+          const togliTimer = () => { [tSilenzio, tNiente, tMax, tFine].forEach((x) => { if (x) win.clearTimeout(x); }); tSilenzio = tNiente = tMax = tFine = 0; };
+          // K3: l'unico punto in cui l'ascolto finisce; vale una volta sola per generazione
+          const azzeraAscolto = (g) => {
+              if (g !== genMic)
+                  return;
+              genMic++;
+              togliTimer();
+              const r = ascoltoMic;
               ascoltoMic = null;
+              if (r) {
+                  r.onresult = null;
+                  r.onerror = null;
+                  r.onend = null;
+              }
               statoMic(false);
+              mostraRigaMic('');
+              fineMicT = win.performance.now();
               try {
                   win.localStorage.setItem(PREF_MIC, '1');
               }
               catch (x) { }
               if (notaMic && !notaMic.classList.contains('errore'))
                   mostraNotaMic(false);
-              if (!t || !fin)
+              riprendiAudio();          // K5: dopo l'ascolto il motore del suono riparte se il contesto e' sospeso o interrotto
+              micEvento('fine');
+              const t = testoMic.trim();
+              testoMic = '';
+              if (!t)                   // K1: niente testo, niente parte
                   return;
-              const g = genV;
-              dopo(() => { if (g === genV && inputCore && inputCore.value.trim() === t) {
+              const gv = genV;
+              dopo(() => { if (gv === genV && inputCore && inputCore.value.trim() === t) {
                   const inv = formCore ? formCore.querySelector('.invia') : null;
                   if (inv)
                       inv.click();
-              } }, 800);
+              } }, 800);                // K1 e K5: la domanda parte dopo 0,8 s (la voce della risposta non prima di 300 ms dalla fine)
           };
-          const avviaAscolto = () => {      // l'unico punto in cui parte il riconoscimento: dal tocco sul tasto
-              if (!Riconoscitore || ascoltoMic)
+          const fermaAscolto = (g) => {
+              if (g !== genMic || !ascoltoMic || tFine)
                   return;
-              chiudiRisposta();                       // la voce di VERA, se parla, si ferma
-              chiudiElenco();
-              sbloccaVoce();                          // il tocco sblocca anche la voce della risposta che verra'
+              const r = ascoltoMic;
+              try {
+                  r.stop();
+              }
+              catch (x) { }
+              tFine = win.setTimeout(() => {      // K3: se onend non arriva entro 1,5 s, abort() e azzeramento comunque
+                  try {
+                      if (r.abort)
+                          r.abort();
+                  }
+                  catch (x) { }
+                  azzeraAscolto(g);
+              }, 1500);
+          };
+          const provaAscolto = (n) => {
               let r;
               try {
                   r = new Riconoscitore();
@@ -4702,23 +4810,32 @@
               r.continuous = false;
               r.interimResults = true;
               r.maxAlternatives = 1;
+              const g = ++genMic;
               testoMic = '';
-              finaleMic = false;
               r.onresult = (ev) => {
-                  let t = '', fin = false;
-                  for (let i = 0; i < ev.results.length; i++) {
+                  if (g !== genMic)
+                      return;
+                  let t = '';
+                  for (let i = 0; i < ev.results.length; i++)
                       t += ev.results[i][0].transcript;
-                      if (ev.results[i].isFinal)
-                          fin = true;
-                  }
+                  if (t.trim() && t !== testoMic)
+                      micEvento('risultato');
                   testoMic = t;
-                  finaleMic = finaleMic || fin;
                   if (inputCore) {
                       inputCore.value = t;
                       segnaCampo();
                   }
+                  if (tNiente) {
+                      win.clearTimeout(tNiente);
+                      tNiente = 0;
+                  }
+                  if (tSilenzio)
+                      win.clearTimeout(tSilenzio);
+                  tSilenzio = win.setTimeout(() => fermaAscolto(g), 1800);    // K2a: 1,8 s senza parole nuove
               };
               r.onerror = (ev) => {
+                  if (g !== genMic)
+                      return;
                   const e = ev && ev.error;
                   if (e && e !== 'no-speech' && e !== 'aborted') {
                       mostraNotaMic(true, PM.errore);
@@ -4726,20 +4843,42 @@
                           inputCore.focus();
                   }
               };
-              r.onend = fineAscolto;
+              r.onend = () => azzeraAscolto(g);
               ascoltoMic = r;
               mostraNotaMic(true);
+              mostraRigaMic(PM.ascolto_riga);
               statoMic(true);
+              micEvento('inizio');
               try {
                   r.start();
               }
-              catch (x) {
+              catch (x) {                           // K4: un solo nuovo tentativo dopo 300 ms, poi la riga di errore
+                  genMic++;
                   ascoltoMic = null;
                   statoMic(false);
-                  mostraNotaMic(true, PM.errore);
-                  if (inputCore)
-                      inputCore.focus();
+                  mostraRigaMic('');
+                  if (n === 0)
+                      dopo(() => provaAscolto(1), 300);
+                  else {
+                      mostraNotaMic(true, PM.errore);
+                      if (inputCore)
+                          inputCore.focus();
+                  }
+                  return;
               }
+              tNiente = win.setTimeout(() => { if (g === genMic && !testoMic.trim()) {     // K2b: 7 s senza risultati
+                  mostraNotaMic(true, PM.niente);
+                  fermaAscolto(g);
+              } }, 7000);
+              tMax = win.setTimeout(() => fermaAscolto(g), 15000);                         // K2c: 15 s in tutto
+          };
+          const avviaAscolto = () => {      // l'unico punto in cui parte il riconoscimento: dal tocco sul tasto
+              if (!Riconoscitore || ascoltoMic)
+                  return;
+              chiudiRisposta();                       // la voce di VERA, se parla, si ferma
+              chiudiElenco();
+              sbloccaVoce();                          // K5: il tocco sblocca anche la voce della risposta che verra'
+              provaAscolto(0);
           };
           if (Riconoscitore && formCore && inputCore) {
               tastoMic = doc.createElement('button');
@@ -4748,13 +4887,19 @@
               tastoMic.setAttribute('data-mic', '1');
               tastoMic.setAttribute('aria-pressed', 'false');
               tastoMic.setAttribute('aria-label', String(PM.aria || ''));
-              tastoMic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3.5" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"></path></svg>';
+              tastoMic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3.5" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"></path></svg>'
+                  + '<svg class="mic-anello" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24" pathLength="1"></circle></svg>';
               const inv = formCore.querySelector('.invia');
               formCore.insertBefore(tastoMic, inv || null);
+              rigaMic = doc.createElement('p');
+              rigaMic.className = 'riga-mic';
+              rigaMic.setAttribute('role', 'status');
+              rigaMic.hidden = true;
+              formCore.insertAdjacentElement('afterend', rigaMic);
               notaMic = doc.createElement('p');
               notaMic.className = 'nota-mic';
               notaMic.setAttribute('role', 'status');
-              formCore.insertAdjacentElement('afterend', notaMic);
+              rigaMic.insertAdjacentElement('afterend', notaMic);
               let prima = true;
               try {
                   prima = !win.localStorage.getItem(PREF_MIC);
@@ -4763,13 +4908,12 @@
               mostraNotaMic(prima);                   // la prima volta l'avviso si vede subito
               ascolta(tastoMic, 'click', (e) => {
                   e.preventDefault();
-                  if (ascoltoMic) {                   // secondo tocco: ferma l'ascolto
-                      try {
-                          ascoltoMic.stop();
-                      }
-                      catch (x) { }
+                  if (ascoltoMic) {                   // K4: un tocco mentre ascolta ferma
+                      fermaAscolto(genMic);
                       return;
                   }
+                  if (win.performance.now() - fineMicT < 400)   // K4: niente doppio avvio subito dopo la fine
+                      return;
                   avviaAscolto();
               });
           }
@@ -4947,6 +5091,7 @@
                   const f = ok ? ((((d.frasi || [])[0] || {}).fonti || [])[0] || fonte0) : null;
                   const esito = ok ? (d.esito === 'verificata' ? ES.verificata : ES.preparata) || '' : (d.ripiego ? ES.ripiego : ES.rifiutata) || '';
                   rifiutoAttivo = !ok;
+                  togliProposte();
                   const e = nuovaRisposta({ domanda: d.domanda, frasi, tipo: '', classe: ok ? 'verif' : 'rifiuto', fonte: f, esito,
                       nota: ok ? [d.esito === 'verificata' ? PR.nota_verificata : PR.nota_preparata, d.riga_fonti].filter(Boolean).join(' · ') : '' });
                   if (fusEl)
@@ -4954,6 +5099,9 @@
                   if (ok)
                       impostaStato('parla');
                   mostraFonte(e, f, g, esito);
+                  // H3 (25/11): un rifiuto per mancanza di fatti (non il rifiuto clinico) propone fino a tre domande dell'elenco
+                  if (!ok && MANCANO_FATTI.includes(d.motivo))
+                      mostraProposte(d.domanda || '');
               });
           }
           if (win.fetch && PAROLE.audio)
@@ -5186,6 +5334,8 @@
               }
               const sug = tgt.closest('[data-chiedi-id]');
               if (sug && !sug.hasAttribute('data-esempio')) {
+                  if (sug.classList.contains('rc-proposta'))   // H3: dal rifiuto, la risposta si apre dopo la chiusura (U3)
+                      chiudiRisposta();
                   chiudiElenco();
                   if (inputCore)
                       inputCore.value = '';
@@ -5321,16 +5471,23 @@
           // Parole chiare: minuscolo, senza accenti ne' punteggiatura, parole intere; vale anche per la domanda detta a voce
           const pulisci = (x) => ' ' + String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
           const ha = (t, frasi) => frasi.some((f) => t.indexOf(' ' + f + ' ') >= 0);
-          const PROGETTO = ['costruito', 'costruita', 'di cosa parla', 'di che parla', 'spiegami il progetto', 'cos e questo progetto', 'che progetto',
-              'cosa avete fatto', 'cosa hanno fatto', 'in cosa consiste'];
+          // H2 (25/11, versione 2): solo per domande di al massimo 9 parole; niente riga «Rispondo a»
+          const LAVORO = ['costruito', 'costruita', 'cosa fanno', 'cosa fate', 'che fate', 'cosa avete fatto', 'cosa hanno fatto', 'di cosa vi occupate',
+              'cosa fa questo progetto', 'spiegami il progetto', 'in cosa consiste', 'riassumi', 'in breve'];
+          const PROGETTO = ['cos e questo progetto', 'che progetto', 'di cosa parla', 'di che parla'];
           const GRUPPO_CHI = ['siete', 'vi ha', 'ha fatto', 'l ha fatto', 'ha realizzato', 'c e dietro', 'sono i ragazzi', 'sono gli studenti'];
           const GRUPPO = ['presentatevi', 'parlami di voi', 'parlami del gruppo', 'parlami della squadra'];
           const VERA_FRASI = ['chi sei', 'che cosa fai', 'cosa fai', 'che fai', 'cosa sai fare', 'come funzioni', 'a cosa servi', 'presentati', 'chi e vera'];
           const SALUTI = ['ciao', 'ehi', 'buongiorno', 'salve'];
+          const nelCat = (id) => !!(CATALOGO && CATALOGO.per_id && CATALOGO.per_id[id]);
           const instrada = (v) => {
               const t = pulisci(v), chi = ha(t, ['chi']);
+              if (t.trim().split(' ').filter(Boolean).length > 9)
+                  return null;
+              if (ha(t, LAVORO))
+                  return chi ? 'giuria_56' : (nelCat('giuria_57') ? 'giuria_57' : 'giuria_50');
               if (ha(t, PROGETTO))
-                  return chi ? 'giuria_56' : 'messaggio_progetto';
+                  return 'messaggio_progetto';
               if ((chi && ha(t, GRUPPO_CHI)) || ha(t, GRUPPO))
                   return 'giuria_56';
               if (ha(t, VERA_FRASI))
@@ -5355,7 +5512,7 @@
               if (c)                                    // scritta uguale a una del catalogo: la risposta preparata
                   chiediVera(c.domanda, c.id, VIA.preparata || '');
               else if (idI && CATALOGO && CATALOGO.per_id && CATALOGO.per_id[idI])
-                  chiediVera(v, idI, VIA.preparata || '', v);      // F4: instradata, con la riga «Rispondo a: «…»»
+                  chiediVera(CATALOGO.per_id[idI].domanda, idI, VIA.preparata || '');      // F4/H2: instradata, si apre come dall'elenco
               else if (dalVivo)
                   chiediVera(v, null, VIA.scritta || '');
               else {                                    // senza servizio: l'elenco, filtrato con le sue parole
@@ -6095,6 +6252,11 @@
                               const esce = i === passi.length - 1 ? 1 : 1 - liscio((u - (i + 1 - B / 2 + B * 0.4)) / (B * 0.6));
                               const o = sicuro(Math.min(entra, esce), 0);
                               const oS = o.toFixed(2), avS = lim(u - i).toFixed(2);
+                              if (maschera) {
+                                  if (o > migliore) { migliore = o; att = i; }
+                                  if (p.__av !== avS) { p.__av = avS; p.style.setProperty('--av', avS); }
+                                  return;
+                              }
                               if (p.__o !== oS) {          // si scrive solo quando cambia (niente ricalcolo degli stili a ogni giro)
                                   p.__o = oS;
                                   p.style.opacity = oS;
@@ -6112,6 +6274,7 @@
                               }
                           });
                       }
+                      if (maschera) att = maschera.mostra(att, t);
                       passi.forEach((p, i) => { p.classList.toggle('attivo', i === att); p.classList.toggle('spento', i !== att); });
                       const modo = att >= 0 && passi[att] ? Number(passi[att].getAttribute('data-modo')) : 0;
                       if (cores.metodo && visibile(cores.metodo.tela, H)) {
@@ -6256,6 +6419,15 @@
                       let ccx = st ? 0.5 : 0.68 + (zg.cx - 0.68) * sp;
                       let ccy = st ? 0.62 - 0.32 * sp : 0.52 + (sf.cy - 0.52) * sp;
                       let cR = st ? (Rb + (sf.R - Rb) * sp) * (1 - 0.4 * sp) : Rb + (zg.R - Rb) * sp;
+                      // L1 (25/11): mentre il microfono ascolta la sfera respira piano e si raccoglie verso il nucleo; con il campo non vuoto
+                      // e un tasto da meno di 1,2 s resta «attenta» (un po' piu' luminosa). Solo eventi veri, nessuna ampiezza simulata
+                      const micOn = !fermo && root.classList.contains('mic-ascolta');
+                      if (micOn) {
+                          lc = 0.3 + 0.08 * Math.sin(t1 * 1.3);
+                          cR *= 0.955 + 0.015 * Math.sin(t1 * 1.3);
+                      }
+                      else if (!fermo && win.performance.now() < attentaFino && inputCore && inputCore.value)
+                          lc += 0.06;
                       scenaQ += (0 - scenaQ) * (1 - Math.exp(-dt * 3.6));
                       const qS = facile(lim(scenaQ));
                       const geo = geometriaScena(Wv, H, st, sf, Rb);
@@ -6293,7 +6465,7 @@
                               jv, amp: ampV, lc, luce, scanY, vibra: 0,
                               sat: satAttivo, anello: anelloTesto, filo: st || qS > 0.05 ? null : (tf && fus && filo ? { x: fus.ax + fus.dx * tf.cv, y: fus.ay + fus.dy * tf.cv, k: filo.k } : filo), filoA, attivo: statoC !== 'pronta',
                               anelloMax: zg.ring, anelloK: sp,
-                              ascolto: false, distSat: st ? 1.45 : 1.62,
+                              ascolto: micOn, impulsi: impulsiMic, impulsiP: impulsiTasti, distSat: st ? 1.45 : 1.62,
                               gl: vivoGL, conto: statoC === 'da_inviare' ? contoFraz : 0, scena: qS > 0.01 ? { x: geo.sx, y: geo.sy, verticale: geo.verticale, q: qS } : null, verso: versoParola(), modo: figM, figCorta: figM > 0, tuffo: tf
                           }, t);
                       if (vivoGL && !dentroNucleo) {

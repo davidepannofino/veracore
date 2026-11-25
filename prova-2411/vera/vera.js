@@ -1,7 +1,7 @@
 // VERA viva: widget «Chiedi a VERA» per il sito. Nessuna libreria, nessuna risorsa esterna.
 //
 // Uso:
-//   <section class="vera" data-api="https://vera-viva.<account>.workers.dev" data-catalogo="catalogo.json?v=ee8f8ccc"
+//   <section class="vera" data-api="https://vera-viva.<account>.workers.dev" data-catalogo="catalogo.json?v=951af781"
 //            data-repo="https://github.com/<proprietario>/<repository>/blob/main/"></section>
 //   <link rel="stylesheet" href="vera.css"> <script src="vera.js" defer></script>
 //
@@ -222,7 +222,8 @@
       aggiornaContatore();
       // per vera_voce.js; per la pagina del design 32 (web/sito/v32) anche la risposta come mostrata qui: domanda, frasi con le fonti, esito
       radice.dispatchEvent(new CustomEvent("vera-mostrata", { detail: { esito: r.esito, voce: r.voce || null, domanda, frasi: r.frasi || [],
-        marcatura: r.marcatura || null, riga_fonti: r.riga_fonti || "", testo_rifiuto: r.testo_rifiuto || "", ripiego: Boolean(r.ripiego) } }));
+        marcatura: r.marcatura || null, riga_fonti: r.riga_fonti || "", testo_rifiuto: r.testo_rifiuto || "", ripiego: Boolean(r.ripiego),
+        motivo: r.motivo || null } }));
     }
 
     // ---- voce dal vivo (codice in vera_voce.js): qui solo il passaggio delle righe {"voce"} della diretta, che arrivano
@@ -438,7 +439,7 @@
     }
 
     (async () => {
-      try { catalogo = await (await fetch(radice.dataset.catalogo || "catalogo.json?v=ee8f8ccc")).json(); } catch { /* resta vuoto */ }
+      try { catalogo = await (await fetch(radice.dataset.catalogo || "catalogo.json?v=951af781")).json(); } catch { /* resta vuoto */ }
       const nome = catalogo.nome_assistente || "";
       titolo.textContent = testiNuovi.titolo || `Chiedi a ${nome}`;
       chiE.textContent = testiNuovi.chi_titolo || `Chi è ${nome}?`;

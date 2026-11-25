@@ -1061,8 +1061,6 @@ body.crash32 #rapporto.cornice-entra{animation:u8-cornice .7s var(--ease-roll) b
 .registro-provalo .registro-riga:nth-child(2){--i:2}
 .registro-provalo .registro-riga:nth-child(3){--i:3}
 .registro-provalo .registro-riga:nth-child(4){--i:4}
-/* F4 (chiusura 25/11): la riga «Rispondo a: «…»» sopra la domanda instradata */
-.rc-rispondo{margin:0 0 6px;font:400 12px/1.4 var(--font-main);letter-spacing:.03em;color:var(--etichetta)}
 /* F9 (chiusura 25/11): sotto i 520 px il campo della domanda prende tutta la prima riga; sulla seconda elenco, microfono, voce e
    «Chiedi» (a destra, piu' largo). Aspetto dei tasti invariato */
 @media (max-width:519px){
@@ -1100,3 +1098,31 @@ body.crash32 #rapporto.cornice-entra{animation:u8-cornice .7s var(--ease-roll) b
 .pagina.modo-movimento .due-campioni::after{content:"";position:absolute;left:0;right:0;top:-18px;height:18px;border-radius:28px 28px 0 0;background:linear-gradient(rgba(20,21,23,0),rgba(20,21,23,.07));pointer-events:none}
 .pagina.modo-movimento .due-campioni .foglio-linea{position:absolute;left:28px;right:28px;top:0;border-top:1px dashed var(--tratteggio);transform-origin:left;transform:scaleX(var(--p,0));pointer-events:none}
 }
+/* H3 (25/11): sotto un rifiuto per mancanza di fatti, fino a tre domande dell'elenco da toccare */
+.rc-proposte{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:18px 0 8px;width:min(46rem,86vw);align-self:center}
+.rc-proposte-titolo{margin:0;font:400 11.5px/1.4 var(--font-main);text-transform:uppercase;letter-spacing:.05em;color:var(--etichetta)}
+.rc-proposta{min-height:44px;padding:10px 14px;border:1px solid var(--linea);border-radius:999px;background:transparent;color:var(--ink);font:400 14px/1.35 var(--font-main);text-align:left;cursor:pointer}
+.rc-proposta:hover{border-color:var(--accent);background:var(--accent-soft)}
+/* K6 (25/11): mentre ascolta, sul tasto un anello che si consuma in 15 s e sotto il campo la riga «Ti ascolto…» */
+.barra-core .mic .mic-anello{position:absolute;inset:-3px;width:calc(100% + 6px);height:calc(100% + 6px);transform:rotate(-90deg);pointer-events:none;opacity:0}
+.barra-core .mic .mic-anello circle{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:1;stroke-dashoffset:0}
+.barra-core .mic.ascolta .mic-anello{opacity:1}
+.barra-core .mic.ascolta .mic-anello circle{animation:mic-consuma 15s linear both}
+@keyframes mic-consuma{from{stroke-dashoffset:0}to{stroke-dashoffset:1}}
+.riga-mic{margin:8px 2px 0;font:400 12px/1.5 var(--font-main);color:var(--accent)}
+/* L2 (25/11): bagliore sotto il cursore, solo con il mouse: cerchio di 480 px; sulle sezioni chiare arancione caldo (massimo 0,10),
+   sulle scure fino a 0,18 con fusione «screen»; sopra tasti e collegamenti si stringe e si accende un poco (gia' nel calcolo) */
+.alone span,.alone span.alone-scuro{width:480px;height:480px;margin:-240px 0 0 -240px}
+.alone .alone-chiaro{display:block}
+.alone.on .alone-chiaro{opacity:calc((1 - var(--asc,0)) * .065 * var(--af,1))}
+.alone.on .alone-scuro{opacity:calc(var(--asc,0) * .116 * var(--af,1))}
+.alone-chiaro{background:radial-gradient(closest-side,rgba(255,138,48,1),rgba(255,138,48,.35) 45%,transparent);mix-blend-mode:multiply}
+.alone-scuro{background:radial-gradient(closest-side,rgba(255,138,48,1),rgba(255,138,48,.3) 45%,transparent)}
+@media (hover:none),(pointer:coarse),(prefers-reduced-motion:reduce){.alone{display:none}}
+
+/* L3 (25/11): maschera del cambio di passo (una sola, sopra la colonna del testo) e numero grande del passo a opacita' 0,08 */
+.passi-pista .passi>.passi-maschera,.passi-pista .passi>.passi-grande{grid-area:1/1;list-style:none;pointer-events:none}
+.passi-maschera{align-self:stretch;z-index:2;opacity:0;will-change:transform,opacity;contain:strict;background:linear-gradient(to top,transparent,var(--fondo-maschera,#0E1012) 28%,var(--fondo-maschera,#0E1012) 72%,transparent)}
+.passi-grande{align-self:center;justify-self:end;z-index:0;opacity:.08;will-change:transform;contain:layout paint;font:500 clamp(140px,18vw,260px)/1 var(--font-main);letter-spacing:-.06em;color:var(--brina)}
+.con-maschera .passi-pista .passo{transition:none;filter:none;transform:none;z-index:1}
+@media (prefers-reduced-motion:reduce){.passi-maschera,.passi-grande{display:none}}

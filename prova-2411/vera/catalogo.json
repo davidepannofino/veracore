@@ -3,7 +3,7 @@
  "nome_assistente": "VERA",
  "dataset": "REALE",
  "marcatura": null,
- "impronta_fatti": "e5a0b0b094c5955e71d0b32a594253838ba22c4e541f14f738a7e11053888c3d",
+ "impronta_fatti": "96db39ac2619b160fa62c267e447f30e20d74e772bbdfe3546aab7e495c3ec27",
  "catalogo": [
   {
    "id": "messaggio_progetto",
@@ -21,13 +21,13 @@
      "id": "giuria_02",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 27,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     },
     {
      "id": "giuria_03",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 30,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     },
     {
      "id": "k_primario",
@@ -82,13 +82,13 @@
      "id": "giuria_03",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 30,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     },
     {
      "id": "giuria_02",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 27,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     },
     {
      "id": "messaggio_novita_2",
@@ -100,19 +100,19 @@
      "id": "giuria_04",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 33,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     },
     {
      "id": "giuria_36",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 140,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     },
     {
      "id": "giuria_18",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 82,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     },
     {
      "id": "messaggio_novita_letteratura",
@@ -124,7 +124,7 @@
      "id": "giuria_49",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 45,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "frasi": [
@@ -175,13 +175,13 @@
      "id": "giuria_16",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 76,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     },
     {
      "id": "giuria_15",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 73,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     },
     {
      "id": "gruppo_serve",
@@ -245,7 +245,7 @@
      "id": "giuria_50",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 21,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -261,7 +261,7 @@
      "id": "giuria_01",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 24,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -277,7 +277,7 @@
      "id": "giuria_02",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 27,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -293,7 +293,7 @@
      "id": "giuria_03",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 30,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -309,7 +309,7 @@
      "id": "giuria_04",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 33,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -325,7 +325,7 @@
      "id": "giuria_05",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 36,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -341,7 +341,7 @@
      "id": "giuria_06",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 39,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -357,7 +357,7 @@
      "id": "giuria_07",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 42,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -373,7 +373,7 @@
      "id": "giuria_49",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 45,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -389,7 +389,7 @@
      "id": "giuria_08",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 50,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -405,7 +405,7 @@
      "id": "giuria_09",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 53,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -421,7 +421,7 @@
      "id": "giuria_10",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 56,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -437,7 +437,7 @@
      "id": "giuria_11",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 59,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -453,7 +453,7 @@
      "id": "giuria_12",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 62,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -469,7 +469,7 @@
      "id": "giuria_13",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 65,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -485,7 +485,7 @@
      "id": "giuria_14",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 68,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -501,7 +501,7 @@
      "id": "giuria_15",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 73,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -517,7 +517,7 @@
      "id": "giuria_16",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 76,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -533,7 +533,7 @@
      "id": "giuria_17",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 79,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -549,7 +549,7 @@
      "id": "giuria_18",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 82,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -565,7 +565,7 @@
      "id": "giuria_19",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 85,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -581,7 +581,7 @@
      "id": "giuria_20",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 88,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -597,7 +597,7 @@
      "id": "giuria_21",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 91,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -613,7 +613,7 @@
      "id": "giuria_22",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 96,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -629,7 +629,7 @@
      "id": "giuria_23",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 99,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -645,7 +645,7 @@
      "id": "giuria_24",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 102,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -661,7 +661,7 @@
      "id": "giuria_25",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 105,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -677,7 +677,7 @@
      "id": "giuria_26",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 108,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -693,7 +693,7 @@
      "id": "giuria_27",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 111,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -709,7 +709,7 @@
      "id": "giuria_28",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 114,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -725,7 +725,7 @@
      "id": "giuria_29",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 119,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -741,7 +741,7 @@
      "id": "giuria_30",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 122,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -757,7 +757,7 @@
      "id": "giuria_31",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 125,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -773,7 +773,7 @@
      "id": "giuria_34",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 134,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -789,7 +789,7 @@
      "id": "giuria_35",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 137,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -805,7 +805,7 @@
      "id": "giuria_36",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 140,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -821,7 +821,7 @@
      "id": "giuria_37",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 143,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -837,7 +837,7 @@
      "id": "giuria_38",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 146,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -853,7 +853,7 @@
      "id": "giuria_39",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 149,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -869,7 +869,7 @@
      "id": "giuria_40",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 152,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -885,7 +885,7 @@
      "id": "giuria_41",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 155,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -901,7 +901,7 @@
      "id": "giuria_42",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 158,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -917,7 +917,7 @@
      "id": "giuria_43",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 163,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -933,7 +933,7 @@
      "id": "giuria_44",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 166,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -949,7 +949,7 @@
      "id": "giuria_45",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 169,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -965,7 +965,7 @@
      "id": "giuria_46",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 172,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -981,7 +981,7 @@
      "id": "giuria_47",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 175,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -997,7 +997,7 @@
      "id": "giuria_48",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 179,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -1013,7 +1013,7 @@
      "id": "giuria_51",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 182,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -1029,7 +1029,7 @@
      "id": "giuria_52",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 185,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -1045,7 +1045,7 @@
      "id": "giuria_53",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 188,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -1061,7 +1061,7 @@
      "id": "giuria_54",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 191,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -1077,7 +1077,7 @@
      "id": "giuria_55",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 194,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
@@ -1093,7 +1093,23 @@
      "id": "giuria_56",
      "file": "docs/DOMANDE_GIURIA.md",
      "riga": 197,
-     "impronta": "b71e09c5feafb65522abe74449443e021e0bf14f7b59f43cdf6bd37367dd6922"
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
+    }
+   ],
+   "marcatura": null,
+   "riga_fonti": "Calcolato dal nostro codice · frase verificata"
+  },
+  {
+   "id": "giuria_57",
+   "domanda": "Che cosa avete fatto, in breve?",
+   "risposta": "Il gruppo ha costruito tre cose: un conto, uno strumento aperto e un'assistente, cioè me. Il conto: in 22 pazienti su 64 un'altra metastasi dello stesso paziente mette al primo posto un farmaco diverso. È una stima: l'intervallo al 95% va dal 24% al 47%. L'errore della misura di laboratorio non è stato ancora misurato, quindi contiamo solo i cambi di posto: sul sito è scritto «rumore NOT VERIFIED». Lo strumento è il crash test aperto: con un file CSV e un comando, un altro laboratorio ottiene la stessa analisi sui propri dati. L'assistente sono io: spiego i risultati e mostro la fonte di ogni numero; i conti li fa il codice.",
+   "tipo": "FONTE",
+   "fonti": [
+    {
+     "id": "giuria_57",
+     "file": "docs/DOMANDE_GIURIA.md",
+     "riga": 200,
+     "impronta": "0545d42760c93831e47f379e9f9b5b99240e3ee7da167638bc478661207e126f"
     }
    ],
    "marcatura": null,
