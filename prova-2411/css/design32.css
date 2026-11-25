@@ -1287,3 +1287,21 @@ body.interne32 #etica{scroll-margin-top:112px}
 .pagina.passi-fermi .passi-pista .passo *{animation:none!important}
 .pagina.passi-fermi .passi-pista .cnt-s>span:not(:last-child){display:none}
 .pagina.passi-fermi .contatore-blocco{position:relative;top:auto}
+/* B1 (25/11, proposte.bagliore_v2): il bagliore rifatto. Quattro strati fissi, solo transform e opacita'; nucleo 220 px e alone
+   520 px gia' sfumati (niente blur). Le dissolvenze stanno sugli strati (un'opacita' sul contenitore isolerebbe la fusione):
+   entrata 250 ms, cambio di tavolozza 300 ms, uscita 600 ms */
+.alone-v2 .b2{position:fixed;left:0;top:0;z-index:70;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .6s var(--ease-standard);will-change:transform}
+.alone-v2.on .b2{transition:opacity .3s linear}
+.alone-v2.on.b2-entra .b2{transition:opacity .25s var(--ease-standard)}
+.alone-v2 .b2-n{width:220px;height:220px;margin:-110px 0 0 -110px}
+.alone-v2 .b2-a{width:520px;height:520px;margin:-260px 0 0 -260px}
+.alone-v2 .b2-scuro{mix-blend-mode:lighten;background:radial-gradient(closest-side,rgba(255,122,26,1),rgba(255,122,26,.45) 40%,rgba(255,122,26,.12) 70%,rgba(255,122,26,0))}
+.alone-v2 .b2-chiaro{mix-blend-mode:darken;background:radial-gradient(closest-side,rgba(196,96,28,1),rgba(196,96,28,.45) 40%,rgba(196,96,28,.12) 70%,rgba(196,96,28,0))}
+.alone-v2.on[data-fondo="scuro"] .b2-n.b2-scuro{opacity:.16}
+.alone-v2.on[data-fondo="scuro"] .b2-a.b2-scuro{opacity:.07}
+.alone-v2.on[data-fondo="chiaro"] .b2-n.b2-chiaro{opacity:.10}
+.alone-v2.on[data-fondo="chiaro"] .b2-a.b2-chiaro{opacity:.05}
+.alone-v2.on.b2-mezzo[data-fondo="scuro"] .b2-n.b2-scuro{opacity:.08}
+.alone-v2.on.b2-mezzo[data-fondo="scuro"] .b2-a.b2-scuro{opacity:.035}
+.alone-v2.on.b2-mezzo[data-fondo="chiaro"] .b2-n.b2-chiaro{opacity:.05}
+.alone-v2.on.b2-mezzo[data-fondo="chiaro"] .b2-a.b2-chiaro{opacity:.025}

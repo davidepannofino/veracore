@@ -2579,6 +2579,68 @@
           const suggR = q1('.suggerimenti');
           const scenaEl = q1('[data-scena]');
           const aloneEl = q1('[data-alone]');
+          // B1 (25/11, proposte.bagliore_v2): il bagliore del cursore rifatto. Solo mouse e penna. Smorzamento esponenziale con costante
+          // di tempo 120 ms indipendente dai fotogrammi, solo translate3d; un solo requestAnimationFrame, attivo solo mentre il cursore si
+          // muove o il bagliore non e' arrivato; entra in 250 ms, esce in 600 ms dopo 2,5 s fermo o fuori dalla finestra; con la
+          // velocita' cresce al massimo del 12%. Due strati gia' sfumati (nucleo 220 px, alone 520 px), niente blur; tavolozza per fondo
+          // (scuro: segnale, 0,16 e 0,07 con «screen»; chiaro e foglio: caldo piu' scuro, 0,10 e 0,05 con «multiply»; video e risposta:
+          // meta'), passaggio in 300 ms. Il fondo si legge come in L2.
+          const creaAloneV2 = () => {
+              Array.prototype.forEach.call(aloneEl.children, (c) => { c.style.display = 'none'; });
+              aloneEl.classList.add('alone-v2');
+              const mk = (cl) => { const e = doc.createElement('span'); e.className = cl; aloneEl.appendChild(e); return e; };
+              const strati = [mk('b2 b2-n b2-scuro'), mk('b2 b2-a b2-scuro'), mk('b2 b2-n b2-chiaro'), mk('b2 b2-a b2-chiaro')];
+              let x = -999, y = -999, tx = -999, ty = -999, vx = 0, vy = 0, px = 0, py = 0, pt = 0, sc = 1;
+              let visto = false, fermoDa = 0, raf = 0, ultimo = 0, ultimoCampione = 0, attivo = true, tipo = '', mezzo = '';
+              const cache = new WeakMap();
+              const lumC = (c) => { const m = /rgba?\(([^)]+)\)/.exec(c || ''); if (!m) return null; const v = m[1].split(',').map(parseFloat);
+                  if ((v.length > 3 ? v[3] : 1) < 0.4) return null;
+                  const f = (u) => { u /= 255; return u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4); };
+                  return 0.2126 * f(v[0]) + 0.7152 * f(v[1]) + 0.0722 * f(v[2]); };
+              const campiona = () => {
+                  const els = doc.elementsFromPoint ? doc.elementsFromPoint(tx, ty) : [];
+                  let l = null, meta = root.classList.contains('con-racconto');
+                  for (const el of els) {
+                      if (aloneEl.contains(el)) continue;
+                      if (el.tagName === 'VIDEO') { l = 0.01; meta = true; break; }
+                      if (el.tagName === 'CANVAS') { if (el.closest('.stanza-core, .stanza, .tuffo-scuro, .portale')) { l = 0.01; break; } continue; }
+                      let v = cache.get(el);
+                      if (v === undefined) { v = lumC(win.getComputedStyle(el).backgroundColor); cache.set(el, v); }
+                      if (v !== null) { l = v; break; }
+                  }
+                  const t2 = (l === null ? 0.85 : l) < 0.25 ? 'scuro' : 'chiaro', m2 = meta ? 'mezzo' : '';
+                  if (t2 !== tipo || m2 !== mezzo) { tipo = t2; mezzo = m2; aloneEl.setAttribute('data-fondo', tipo); aloneEl.classList.toggle('b2-mezzo', meta); }
+              };
+              const passo = (t) => {
+                  raf = 0;
+                  if (!attivo) return;
+                  const dt = Math.min(0.1, Math.max(0, (t - (ultimo || t)) / 1000)); ultimo = t;
+                  const k = 1 - Math.exp(-dt / 0.12);
+                  x += (tx - x) * k; y += (ty - y) * k;
+                  const v = Math.hypot(vx, vy); vx *= Math.exp(-dt / 0.15); vy *= Math.exp(-dt / 0.15);
+                  const scT = 1 + Math.min(0.12, v / 9000); sc += (scT - sc) * k;
+                  if (t - ultimoCampione > 110) { ultimoCampione = t; campiona(); }
+                  const tr = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) scale(' + sc.toFixed(3) + ')';
+                  for (const e of strati) e.style.transform = tr;
+                  const arrivato = Math.abs(tx - x) < 0.5 && Math.abs(ty - y) < 0.5 && Math.abs(sc - 1) < 0.002;
+                  if (visto && win.performance.now() - fermoDa > 2500) { visto = false; aloneEl.classList.remove('on'); }
+                  if (!arrivato || (visto && win.performance.now() - fermoDa <= 2500)) raf = win.requestAnimationFrame(passo);
+                  else ultimo = 0;
+              };
+              const via = () => { if (!raf && attivo) raf = win.requestAnimationFrame(passo); };
+              ascolta(root, 'pointermove', (e) => {
+                  if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;          // mai al dito
+                  const now = win.performance.now();
+                  if (pt) { const d = Math.max(8, now - pt) / 1000; vx = (e.clientX - px) / d; vy = (e.clientY - py) / d; }
+                  px = e.clientX; py = e.clientY; pt = now; tx = e.clientX; ty = e.clientY; fermoDa = now;
+                  if (!visto) { if (x < -900) { x = tx; y = ty; } visto = true; ultimoCampione = 0; campiona(); aloneEl.classList.add('on', 'b2-entra'); dopo(() => aloneEl.classList.remove('b2-entra'), 260); }
+                  via(); }, { passive: true });
+              const fuori = () => { visto = false; aloneEl.classList.remove('on'); };
+              ascolta(doc, 'mouseleave', fuori); ascolta(root, 'pointerleave', fuori);
+              ascolta(win, 'blur', fuori);
+              win.__bagliore = () => ({ x, y, tx, ty, sc, visto, tipo, mezzo, raf: !!raf });
+              return { set attivo(v) { attivo = !!v; if (!attivo) fuori(); else via(); }, passo() { } };
+          };
           const creaAlone = () => {
               // L2 (25/11): solo con il mouse e senza movimento ridotto; altrimenti l'elemento non c'e' proprio
               if (!aloneEl || ridotto || !win.matchMedia || !win.matchMedia('(hover: hover) and (pointer: fine)').matches) {
@@ -2586,6 +2648,8 @@
                       aloneEl.remove();
                   return null;
               }
+              if (PAROLE.bagliore_v2)
+                  return creaAloneV2();
               const strati = Array.prototype.slice.call(aloneEl.children);
               let x = -999, y = -999, tx = -999, ty = -999;
               let visto = false;
